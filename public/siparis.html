@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sipariş Ver</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1a1a2e;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h2{font-size:16px;font-weight:600}
+.header a{color:#aab;font-size:13px;text-decoration:none}
+.header a:hover{color:#fff}
+.container{max-width:700px;margin:24px auto;padding:0 16px}
+.kart{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:16px}
+.kart h3{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:16px;border-bottom:2px solid #f0f2f5;padding-bottom:8px}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:11px;font-weight:600;color:#5f6368;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+select,input{width:100%;padding:10px 12px;border:1px solid #dadce0;border-radius:8px;font-size:14px;color:#1a1a2e;background:#fff}
+select:focus,input:focus{outline:none;border-color:#1a73e8}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fiyat-kutu{background:#f8f9fa;border-radius:8px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.fiyat-kutu .etiket{font-size:12px;color:#5f6368}
+.fiyat-kutu .deger{font-size:20px;font-weight:700;color:#1a1a2e}
+.fiyat-kutu .para{font-size:13px;color:#5f6368;margin-left:4px}
+.btn{padding:12px 24px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-primary{background:#1a73e8;color:#fff;width:100%}
+.btn-primary:hover{background:#1557b0}
+.btn-primary:disabled{background:#b0c4de;cursor:not-allowed}
+.btn-outline{background:#fff;color:#5f6368;border:1px solid #dadce0;margin-right:8px}
+.mesaj{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
+.mesaj.basarili{background:#e6f4ea;color:#188038}
+.mesaj.hata{background:#fce8e6;color:#d93025}
+.yukleniyor{color:#5f6368;font-size:13px;padding:20px;text-align:center}
+.urun-bilgi{background:#e8f0fe;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#1a73e8;display:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>🛒 Yeni Sipariş</h2>
+  <a href="dashboard.html">← Dashboard</a>
+</div>
+
+<div class="container">
+
+<div class="kart">
+  <h3>📦 Ürün Seçimi</h3>
+  <div id="yukleniyor" class="yukleniyor">⏳ Ürünler yükleniyor...</div>
+  <div id="formIcerik" style="display:none">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Marka</label>
+        <select id="selMarka" onchange="markaFiltre()">
+          <option value="">Tümü</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="selKat" onchange="katFiltre()">
+          <option value="">Tümü</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Ürün *</label>
+      <select id="selUrun" onchange="urunSec()">
+        <option value="">Ürün seçin</option>
+      </select>
+    </div>
+    <div id="urunBilgi" class="urun-bilgi"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Miktar *</label>
+        <input type="number" id="miktar" min="1" step="1" placeholder="0" oninput="toplamHesapla()">
+      </div>
+      <div class="form-group">
+        <label>Para Birimi</label>
+        <input type="text" id="para" readonly style="background:#f8f9fa;color:#5f6368">
+      </div>
+    </div>
+    <div class="fiyat-kutu">
+      <div>
+        <div class="etiket">Birim Fiyat</div>
+        <div><span class="deger" id="birimFiyat">—</span></div>
+      </div>
+      <div style="text-align:right">
+        <div class="etiket">Toplam Tutar</div>
+        <div><span class="deger" id="toplamTutar">—</span> <span class="para" id="paraBirim"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="kart" id="musteriKart" style="display:none">
+  <h3>👤 Müşteri Bilgisi</h3>
+  <div class="form-group">
+    <label>Müşteri *</label>
+    <select id="selMusteri">
+      <option value="">Müşteri seçin</option>
+    </select>
+  </div>
+</div>
+
+<div class="kart">
+  <h3>📍 Teslimat Adresi</h3>
+  <div class="form-group">
+    <select id="selAdres">
+      <option value="">Adres seçmek opsiyoneldir</option>
+    </select>
+  </div>
+</div>
+
+<div class="kart">
+  <div class="form-group">
+    <label>Sipariş Notu</label>
+    <input type="text" id="sipNot" placeholder="Özel istek veya not (opsiyonel)">
+  </div>
+  <button class="btn btn-primary" id="btnGonder" onclick="siparisGonder()" disabled>🛒 Siparişi Gönder</button>
+  <div class="mesaj" id="mesaj"></div>
+</div>
+
+</div>
+
+<script>
+var API = '/api';
+var oturum = null;
+var tumUrunler = [];
+var birimFiyatDeger = 0;
+
+function init() {
+  try { oturum = JSON.parse(localStorage.getItem('_oturum')); } catch(e){}
+  if (!oturum) { window.location.href = 'giris.html'; return; }
+
+  // Bayi rolünde müşteri kartı göster
+  if (oturum.rol === 'Bayi' || oturum.rol === 'Admin') {
+    document.getElementById('musteriKart').style.display = 'block';
+    musteriYukle();
+  }
+
+  urunYukle();
+}
+
+function post(ep, data) {
+  return fetch(API + '/' + ep, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(Object.assign({kullaniciId: oturum.id, rol: oturum.rol, bayiId: oturum.id}, data))
+  }).then(r => r.json());
+}
+
+function urunYukle() {
+  post('getUrunListesi', {}).then(function(r) {
+    tumUrunler = r.liste || [];
+    document.getElementById('yukleniyor').style.display = 'none';
+    if (!tumUrunler.length) {
+      document.getElementById('yukleniyor').style.display = 'block';
+      document.getElementById('yukleniyor').textContent = 'Kayıtlı ürün bulunamadı.';
+      return;
+    }
+    document.getElementById('formIcerik').style.display = 'block';
+    doldurMarkalar();
+    doldurUrunler();
+  }).catch(function() {
+    document.getElementById('yukleniyor').textContent = '❌ Ürünler yüklenemedi.';
+  });
+}
+
+function musteriYukle() {
+  post('getMusteriler', {}).then(function(r) {
+    var sel = document.getElementById('selMusteri');
+    (r.musteriler || []).forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m.id; opt.textContent = m.ad;
+      sel.appendChild(opt);
+    });
+    // Müşteri rolünde kendi ID'si
+    if (oturum.rol === 'Musteri') sel.value = oturum.id;
+  });
+}
+
+function doldurMarkalar() {
+  var markalar = [...new Set(tumUrunler.map(u => u.marka).filter(Boolean))].sort();
+  var sel = document.getElementById('selMarka');
+  sel.innerHTML = '<option value="">Tümü</option>';
+  markalar.forEach(function(m) {
+    var opt = document.createElement('option');
+    opt.value = m; opt.textContent = m;
+    sel.appendChild(opt);
+  });
+}
+
+function markaFiltre() {
+  var marka = document.getElementById('selMarka').value;
+  var katSel = document.getElementById('selKat');
+  var secilenKat = katSel.value;
+  var katlar = [...new Set(tumUrunler.filter(u => !marka || u.marka === marka).map(u => u.kategori).filter(Boolean))].sort();
+  katSel.innerHTML = '<option value="">Tümü</option>';
+  katlar.forEach(function(k) {
+    var opt = document.createElement('option');
+    opt.value = k; opt.textContent = k;
+    if (k === secilenKat) opt.selected = true;
+    katSel.appendChild(opt);
+  });
+  doldurUrunler();
+}
+
+function katFiltre() { doldurUrunler(); }
+
+function doldurUrunler() {
+  var marka = document.getElementById('selMarka').value;
+  var kat = document.getElementById('selKat').value;
+  var filtered = tumUrunler.filter(function(u) {
+    return (!marka || u.marka === marka) && (!kat || u.kategori === kat);
+  });
+  var sel = document.getElementById('selUrun');
+  sel.innerHTML = '<option value="">Ürün seçin</option>';
+  filtered.forEach(function(u) {
+    var opt = document.createElement('option');
+    opt.value = u.id || u.ad;
+    opt.textContent = u.ad + (u.ambalaj ? ' (' + u.ambalaj + ')' : '');
+    opt.dataset.urun = JSON.stringify(u);
+    sel.appendChild(opt);
+  });
+  urunSec();
+}
+
+function urunSec() {
+  var sel = document.getElementById('selUrun');
+  var opt = sel.options[sel.selectedIndex];
+  var bilgiDiv = document.getElementById('urunBilgi');
+
+  if (!opt || !opt.dataset.urun) {
+    bilgiDiv.style.display = 'none';
+    birimFiyatDeger = 0;
+    document.getElementById('birimFiyat').textContent = '—';
+    document.getElementById('toplamTutar').textContent = '—';
+    document.getElementById('btnGonder').disabled = true;
+    return;
+  }
+
+  var u = JSON.parse(opt.dataset.urun);
+  // Fiyat: Admin/Bayi görüntüsünde fiyat_admin varsa kullan, yoksa fiyat_bayi
+  birimFiyatDeger = parseFloat(u.fiyat_admin || u.fiyat_bayi || u.fiyat || 0);
+  var paraStr = u.para_admin || u.para_bayi || u.para || oturum.para || 'TL';
+
+  document.getElementById('para').value = paraStr;
+  document.getElementById('paraBirim').textContent = paraStr;
+  document.getElementById('birimFiyat').textContent = birimFiyatDeger > 0 ? birimFiyatDeger.toFixed(2) : '—';
+
+  bilgiDiv.innerHTML = '📦 ' + u.marka + ' › ' + u.kategori + (u.birim ? ' · ' + u.birim : '') + (u.ambalaj ? ' · ' + u.ambalaj : '');
+  bilgiDiv.style.display = 'block';
+
+  toplamHesapla();
+}
+
+function toplamHesapla() {
+  var miktar = parseInt(document.getElementById('miktar').value) || 0;
+  var toplam = birimFiyatDeger * miktar;
+  document.getElementById('toplamTutar').textContent = toplam > 0 ? toplam.toFixed(2) : '—';
+  var urunSecildi = document.getElementById('selUrun').value !== '';
+  document.getElementById('btnGonder').disabled = !(urunSecildi && miktar > 0 && birimFiyatDeger > 0);
+}
+
+function siparisGonder() {
+  var sel = document.getElementById('selUrun');
+  var opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.dataset.urun) return;
+  var u = JSON.parse(opt.dataset.urun);
+  var miktar = parseInt(document.getElementById('miktar').value);
+  var para = document.getElementById('para').value;
+  var toplam = birimFiyatDeger * miktar;
+
+  var musteriId = oturum.rol === 'Musteri' ? oturum.id : document.getElementById('selMusteri').value;
+  if (!musteriId) { showMesaj('Müşteri seçin', false); return; }
+
+  var adresId = document.getElementById('selAdres').value || null;
+
+  document.getElementById('btnGonder').disabled = true;
+  document.getElementById('btnGonder').textContent = '⏳ Gönderiliyor...';
+
+  fetch(API + '/siparisVer', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      musteriId: musteriId,
+      bayiKod: oturum.rol === 'Bayi' ? oturum.id : (oturum.rol === 'Admin' ? 'ADMIN' : null),
+      adresId: adresId,
+      urunId: u.id,
+      urunAdi: u.ad,
+      marka: u.marka,
+      markaId: u.marka_id,
+      kategori: u.kategori,
+      katId: u.kat_id,
+      miktar: miktar,
+      birimFiyat: birimFiyatDeger,
+      para: para,
+      toplam: toplam
+    })
+  }).then(r => r.json()).then(function(r) {
+    if (r.basarili) {
+      showMesaj('✅ Sipariş alındı! No: ' + r.siparisId, true);
+      document.getElementById('selUrun').value = '';
+      document.getElementById('miktar').value = '';
+      document.getElementById('sipNot').value = '';
+      birimFiyatDeger = 0;
+      document.getElementById('birimFiyat').textContent = '—';
+      document.getElementById('toplamTutar').textContent = '—';
+      document.getElementById('urunBilgi').style.display = 'none';
+      document.getElementById('btnGonder').textContent = '🛒 Siparişi Gönder';
+    } else {
+      showMesaj(r.hata || 'Hata oluştu', false);
+      document.getElementById('btnGonder').disabled = false;
+      document.getElementById('btnGonder').textContent = '🛒 Siparişi Gönder';
+    }
+  }).catch(function() {
+    showMesaj('Bağlantı hatası', false);
+    document.getElementById('btnGonder').disabled = false;
+    document.getElementById('btnGonder').textContent = '🛒 Siparişi Gönder';
+  });
+}
+
+function showMesaj(m, ok) {
+  var el = document.getElementById('mesaj');
+  el.textContent = m;
+  el.className = 'mesaj ' + (ok ? 'basarili' : 'hata');
+  el.style.display = 'block';
+  if (ok) setTimeout(function(){ el.style.display='none'; }, 4000);
+}
+
+window.onload = init;
+</script>
+</body></html>
