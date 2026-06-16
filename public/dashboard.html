@@ -289,6 +289,10 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
         });
       });
     },
+    kurKaydet: function(para, deger) {
+      return _api('kurKaydet', { para: para, deger: deger })
+        .then(function(r) { return JSON.stringify(r); });
+    },
     sifreDegistir: function(eskiSifre, yeniSifre) {
       var o = _oturumStore.get() || {};
       return _api('sifreDegistir', { kullaniciId: o.id, eskiSifre: eskiSifre, yeniSifre: yeniSifre })
