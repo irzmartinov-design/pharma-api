@@ -114,7 +114,10 @@ select:focus,input:focus{outline:none;border-color:#1a73e8}
     <label>Sipariş Notu</label>
     <input type="text" id="sipNot" placeholder="Özel istek veya not (opsiyonel)">
   </div>
-  <button class="btn btn-primary" id="btnGonder" onclick="siparisGonder()" disabled>🛒 Siparişi Gönder</button>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-primary" id="btnGonder" onclick="siparisGonder()" disabled style="flex:1">🛒 Siparişi Gönder</button>
+    <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">← Geri Dön</button>
+  </div>
   <div class="mesaj" id="mesaj"></div>
 </div>
 

@@ -18,7 +18,11 @@ export default async function handler(req) {
     if (mevcut) {
       await sql`UPDATE fiyat_musteri SET fiyat=${yeniFiyat}, para=${para||mevcut.para}, kar_yuzde=${karYuzde}, guncelleme=NOW() WHERE id=${mevcut.id}`;
     } else {
-      return allowCors(err('Müşteri fiyat kaydı bulunamadı', 404));
+      // Ürün bilgisini urunler tablosundan al
+      const [urun] = await sql`SELECT * FROM urunler WHERE id=${urunId} LIMIT 1`;
+      if (!urun) return allowCors(err('Ürün bulunamadı'));
+      await sql`INSERT INTO fiyat_musteri (musteri_id, bayi_id, urun_id, urun_adi, marka_id, marka, kat_id, kategori, aktif_madde, birim, ambalaj, fiyat, para, kar_yuzde, guncelleme)
+        VALUES (${musteriId}, ${bayiId||null}, ${urunId}, ${urun.ad}, ${urun.marka_id}, ${urun.marka}, ${urun.kat_id}, ${urun.kategori}, ${urun.aktif_madde||null}, ${urun.birim||null}, ${urun.ambalaj||null}, ${yeniFiyat}, ${para||'TL'}, 0, NOW())`;
     }
     return allowCors(ok({ mesaj: 'Müşteri fiyatı güncellendi', karYuzde: karYuzde.toFixed(2) }));
   } catch (e) { return allowCors(err(e.message, 500)); }
