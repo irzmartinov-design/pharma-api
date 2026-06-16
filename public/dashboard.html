@@ -539,7 +539,7 @@ function fiyatlarGoster(bayiIdParam, musteriIdParam) {
     .withSuccessHandler(function(s) {
       var paralar = JSON.parse(s);
       var pOps = '<option value="">Para birimi seçin</option>' + paralar.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
-      if (rol == 'Admin') adminFiyatPaneli(pOps, bayiIdParam);
+      if (rol == 'Admin') adminFiyatPaneli(pOps, bayiIdParam, musteriIdParam);
       else bayiFiyatPaneli(pOps, musteriIdParam);
     })
     .getParaListesi();
@@ -680,12 +680,14 @@ function satirSec(prefix, i) {
 }
 
 // ── ADMİN FİYAT PANELİ ───────────────────────────────────────────────
-function adminFiyatPaneli(pOps, onceBayiId) {
+function adminFiyatPaneli(pOps, onceBayiId, onceMusteriId) {
   var by='<option value="">Bayi seçin</option>'+bayiler.map(function(b){return '<option value="'+b.id+'">'+b.ad+'</option>';}).join('');
+  var msOps='<option value="">Müşteri seçin</option>'+musteriler.map(function(m){return '<option value="'+m.id+'">'+m.ad+'</option>';}).join('');
   ic('<h3>💰 Fiyatlandırma</h3>' +
     '<div class="sekme-bar">' +
       '<button class="sekme aktif" onclick="sekmeAc(this,\'sfGenel\')">📊 Genel Fiyat</button>' +
       '<button class="sekme" onclick="sekmeAc(this,\'sfBayi\')">👥 Bayi Özel</button>' +
+      '<button class="sekme" onclick="sekmeAc(this,\'sfMOz\')">👤 Müşteri Özel</button>' +
     '</div>' +
 
     '<div id="sfGenel" class="sekme-panel aktif">' +
@@ -716,6 +718,21 @@ function adminFiyatPaneli(pOps, onceBayiId) {
     '<div id="bMsg" class="msg"></div>' +
     '<hr class="separator">' +
     '<div id="bTablo"><p style="color:#5f6368;font-size:12px">Bayi seçince fiyatlar görünür.</p></div>' +
+    '</div>' +
+
+    '<div id="sfMOz" class="sekme-panel">' +
+    '<div class="form-group"><label>Müşteri *</label><select id="moMusteri" onchange="moTabloYukle()">'+msOps+'</select></div>' +
+    filterBar('mof') +
+    '<div class="form-row">' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="moPara">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Mod</label><select id="moMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
+      '<div class="form-group"><label>Fiyat</label><input type="number" id="moFiyat" step="0.01" placeholder="—"></div>' +
+    '</div>' +
+    '<button class="btn btn-success btn-sm" onclick="musteriOzelKaydet()">💾 Kaydet</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="musteriOzelParaDegistir()" style="margin-left:6px">💱 Para Birimi</button>' +
+    '<div id="moMsg" class="msg"></div>' +
+    '<hr class="separator">' +
+    '<div id="moTablo"><p style="color:#5f6368;font-size:12px">Müşteri seçince fiyatlar görünür.</p></div>' +
     '</div>');
 
   google.script.run.withSuccessHandler(function(s){
@@ -728,6 +745,12 @@ function adminFiyatPaneli(pOps, onceBayiId) {
     setTimeout(function(){
       var el=document.getElementById('bBayi'); if(el){el.value=onceBayiId; bTabloYukle();}
       sekmeAc(document.querySelector('#icerik .sekme:nth-child(2)'),'sfBayi');
+    },200);
+  }
+  if(onceMusteriId){
+    setTimeout(function(){
+      var el=document.getElementById('moMusteri'); if(el){el.value=onceMusteriId; moTabloYukle();}
+      sekmeAc(document.querySelector('#icerik .sekme:nth-child(3)'),'sfMOz');
     },200);
   }
 }
@@ -963,8 +986,8 @@ function bayileriYukle() {
       h+='<div class="kullanici-satir"><div><strong>'+x.ad+'</strong><br>';
       h+='<span style="font-size:11px;color:#5f6368">ID:'+x.id+' | '+x.kullanici+(x.email?' | '+x.email:'')+'</span> <span class="badge '+bg+'">'+x.durum+'</span></div>';
       h+='<div style="display:flex;gap:4px">';
-      h+='<button class="btn btn-success btn-sm" onclick="bayiFiyatAc('+x.id+')">💰</button>';
-      h+='<button class="btn btn-primary btn-sm" onclick="bayiDuzAc('+x.id+',\''+x.ad.replace(/'/g,"\\'")+'\',\''+(x.email||'')+'\',\''+x.durum+'\')">✏️</button>';
+      h+='<button class="btn btn-success btn-sm" onclick="bayiFiyatAc(\''+x.id+'\')">💰</button>';
+      h+='<button class="btn btn-primary btn-sm" onclick="bayiDuzAc(\''+x.id+'\',\''+x.ad.replace(/'/g,"\\'")+'\',\''+(x.email||'')+'\',\''+x.durum+'\')">✏️</button>';
       h+='</div></div>';
     });
     ic(h);
@@ -981,7 +1004,7 @@ function musterileriYukle() {
       var bg=x.durum=='Aktif'?'badge-aktif':'badge-pasif';
       h+='<div class="kullanici-satir"><div><strong>'+x.ad+'</strong><br>';
       h+='<span style="font-size:11px;color:#5f6368">ID:'+x.id+' | Bayi ID:'+x.bayi+'</span> <span class="badge '+bg+'">'+x.durum+'</span></div>';
-      h+='<button class="btn btn-success btn-sm" onclick="musteriFiyatAc('+x.id+')">💰</button>';
+      h+='<button class="btn btn-success btn-sm" onclick="musteriFiyatAc(\''+x.id+'\')">💰</button>';
       h+='</div>';
     });
     ic(h);
