@@ -56,6 +56,7 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
       <button class="btn btn-primary" onclick="goster('bekleyen')">⏳ Bekleyen Siparişler</button>
       <button class="btn btn-primary" onclick="goster('siparisler')">📦 Tüm Siparişler</button>
       <button class="btn btn-success" onclick="siparisFormAc()">🛒 Sipariş Ver</button>
+      <button class="btn btn-outline" onclick="goster('urunler')">📋 Ürünler</button>
       <button class="btn btn-success" onclick="goster('fiyatlar')">💰 Fiyatlandırma</button>
       <button class="btn btn-primary" onclick="goster('adresler')">📍 Adresler</button>
       <button class="btn btn-outline gizli" id="btnKur" onclick="kurYonetimiAc()">💱 Kur Yönetimi</button>
@@ -123,6 +124,62 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
     <button class="btn btn-outline" onclick="modalKapat('musteriDuzenleModal')" style="flex:1">İptal</button>
   </div>
   <div id="mdMsg" class="msg"></div>
+</div></div>
+
+<!-- Modal: Ürün Ekle / Düzenle -->
+<div id="urunModal" class="modal"><div class="modal-content" style="max-width:560px">
+  <h3 id="urunModalBaslik" style="margin-bottom:16px">📋 Ürün Ekle</h3>
+  <input type="hidden" id="urId">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Marka *</label>
+      <select id="urMarkaSecim" onchange="urMarkaSecimDeg()">
+        <option value="">Marka seçin</option>
+        <option value="__yeni__">+ Yeni Marka</option>
+      </select>
+    </div>
+    <div class="form-group" id="urMarkaYeniGrup" style="display:none">
+      <label>Yeni Marka Adı *</label>
+      <input id="urMarkaYeni" placeholder="Marka adı">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Kategori *</label>
+      <select id="urKatSecim" onchange="urKatSecimDeg()">
+        <option value="">Kategori seçin</option>
+        <option value="__yeni__">+ Yeni Kategori</option>
+      </select>
+    </div>
+    <div class="form-group" id="urKatYeniGrup" style="display:none">
+      <label>Yeni Kategori Adı *</label>
+      <input id="urKatYeni" placeholder="Kategori adı">
+    </div>
+  </div>
+  <div class="form-group"><label>Ürün Adı *</label><input id="urAd" placeholder="Ürün adı"></div>
+  <div class="form-row">
+    <div class="form-group"><label>Aktif Madde</label><input id="urAktifMadde" placeholder="Etken madde"></div>
+    <div class="form-group"><label>Birim</label><input id="urBirim" placeholder="mg, ml, adet..."></div>
+    <div class="form-group"><label>Ambalaj</label><input id="urAmbalaj" placeholder="30 Kapsül, 100ml..."></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Fiyat Bayi</label><input type="number" id="urFiyatBayi" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label>Fiyat Müşteri</label><input type="number" id="urFiyatMusteri" step="0.01" placeholder="0.00"></div>
+    <div class="form-group">
+      <label>Para Birimi</label>
+      <select id="urPara">
+        <option value="TL">TL</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="Tokken">Tokken</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn btn-success" onclick="urunKaydet()" style="flex:1">💾 Kaydet</button>
+    <button class="btn btn-outline" onclick="modalKapat('urunModal')" style="flex:1">İptal</button>
+  </div>
+  <div id="urMsg" class="msg"></div>
 </div></div>
 
 <!-- Modal: Kur Yönetimi -->
@@ -365,10 +422,9 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
     musteriEkle: 'kullaniciEkle',
     bayiGuncelle: 'kullaniciGuncelle',
     musteriGuncelle: 'kullaniciGuncelle',
-    bayiGuncelle: 'kullaniciEkle',
-    musteriGuncelle: 'kullaniciEkle',
     urunListesiGetir: 'getUrunListesi',
     getSiparisFormVeri: 'getUrunListesi',
+    urunKaydet: 'urunKaydet',
   };
 
   var _run = { _s: null, _f: null };
@@ -409,7 +465,7 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
 })();
 // ── SHIM SONU ─────────────────────────────────────────────────────────
 
-var rol='Admin', bayiler=[], musteriler=[], markalar=[], oturum=null;
+var rol='Admin', bayiler=[], musteriler=[], markalar=[], kategoriler=[], oturum=null;
 var _gFiyatData=[], _bFiyatData=[], _bgFiyatData=[], _moFiyatData=[];
 
 // ── INIT ──────────────────────────────────────────────────────────────
@@ -446,6 +502,7 @@ function getDashboard() {
       markalar = d.markalar || [];
       bayiler = d.bayiler || [];
       musteriler = d.musteriler || [];
+      kategoriler = d.kategoriler || [];
       var b = d.bekleyenSayisi || 0;
       var oz = document.getElementById('sipOzet');
       if (b > 0) {
@@ -472,6 +529,7 @@ function goster(sf) {
   else if (sf == 'adresler')    adreslerGoster();
   else if (sf == 'bayiler')     bayileriYukle();
   else if (sf == 'musteriler')  musterileriYukle();
+  else if (sf == 'urunler')     urunleriGoster();
 }
 
 // ── SİPARİŞ FORMU ─────────────────────────────────────────────────────
@@ -1173,6 +1231,171 @@ function mesajGoster(el, metin, ok){
   el.textContent=metin; el.className='msg '+(ok?'msg-ok':'msg-hata'); el.style.display='block';
   clearTimeout(el._t); el._t=setTimeout(function(){el.style.display='none';},4000);
 }
+// ── ÜRÜNLER ───────────────────────────────────────────────────────────
+var _urunData = [];
+
+function urunleriGoster() {
+  ic('<h3>📋 Ürünler</h3><p style="color:#5f6368;padding:8px">⏳ Yükleniyor...</p>');
+  google.script.run.withSuccessHandler(function(s) {
+    var liste = JSON.parse(s); _urunData = liste;
+    var h = '<h3>📋 Ürünler (' + liste.length + ')</h3>';
+    if (rol === 'Admin') {
+      h += '<button class="btn btn-success btn-sm" onclick="urunEkleAc()" style="margin-bottom:12px">➕ Ürün Ekle</button>';
+    }
+    h += filterBar('urf');
+    h += '<div id="urfTablo"><p style="color:#5f6368;font-size:12px">⏳ Yükleniyor...</p></div>';
+    ic(h);
+    filtreVeriDoldurUrun(liste);
+    urunTabloRender(liste);
+  }).withFailureHandler(function() {
+    ic('<h3>❌ Hata</h3><p style="color:#d93025;padding:8px">Ürünler yüklenemedi.</p>');
+  }).getUrunListesi();
+}
+
+function filtreVeriDoldurUrun(data) {
+  var mMap = {}, pMap = {};
+  data.forEach(function(r) { if(r.marka) mMap[r.marka]=1; if(r.para) pMap[r.para]=1; });
+  var mEl = document.getElementById('urfFM'), pEl = document.getElementById('urfFP');
+  if(mEl){ mEl.innerHTML='<option value="">Tümü</option>'; Object.keys(mMap).sort().forEach(function(m){mEl.innerHTML+='<option value="'+m+'">'+m+'</option>';}); }
+  if(pEl){ pEl.innerHTML='<option value="">Tümü</option>'; Object.keys(pMap).sort().forEach(function(p){pEl.innerHTML+='<option value="'+p+'">'+p+'</option>';}); }
+  var kMap={};
+  data.forEach(function(r){ if(r.kategori) kMap[r.kategori]=1; });
+  var kEl=document.getElementById('urfFK');
+  if(kEl){ kEl.innerHTML='<option value="">Tümü</option>'; Object.keys(kMap).sort().forEach(function(k){kEl.innerHTML+='<option value="'+k+'">'+k+'</option>';}); }
+  var uMap={};
+  data.forEach(function(r){ if(r.ad) uMap[r.ad]=1; });
+  var uEl=document.getElementById('urfFU');
+  if(uEl){ uEl.innerHTML='<option value="">Tümü</option>'; Object.keys(uMap).sort().forEach(function(u){uEl.innerHTML+='<option value="'+u+'">'+u+'</option>';}); }
+}
+
+function urunTabloRender(data) {
+  if (!data) data = _urunData;
+  var marka=getVal('urfFM'), kat=getVal('urfFK'), urun=getVal('urfFU'), para=getVal('urfFP');
+  var rows = data.filter(function(r) {
+    return (!marka||r.marka==marka) && (!kat||r.kategori==kat) && (!urun||r.ad==urun) && (!para||r.para==para);
+  });
+  var tablo = document.getElementById('urfTablo'); if(!tablo) return;
+  if(!rows.length){ tablo.innerHTML='<p style="color:#5f6368;font-size:12px;padding:8px">Eşleşen kayıt yok.</p>'; return; }
+  var h = '<div class="tablo-ici"><table>';
+  if(rol === 'Admin') {
+    h += '<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Birim</th><th>Ambalaj</th><th>F.Bayi</th><th>F.Müşteri</th><th>Para</th><th></th></tr>';
+    rows.forEach(function(x) {
+      h += '<tr><td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.ad+'</strong>'+(x.aktif_madde?'<br><span style="font-size:10px;color:#5f6368">'+x.aktif_madde+'</span>':'')+'</td>';
+      h += '<td>'+(x.birim||'—')+'</td><td>'+(x.ambalaj||'—')+'</td>';
+      h += '<td>'+(x.fiyat_bayi||'—')+'</td><td>'+(x.fiyat_musteri||'—')+'</td><td>'+(x.para||'—')+'</td>';
+      h += '<td><button class="btn btn-primary btn-sm" onclick="urunDuzAc('+JSON.stringify(x).replace(/"/g,"&quot;")+')">✏️</button></td></tr>';
+    });
+  } else {
+    h += '<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Birim</th><th>Ambalaj</th><th>Fiyat</th><th>Para</th></tr>';
+    rows.forEach(function(x) {
+      var fiyat = rol==='Bayi' ? (x.fiyat_bayi||x.fiyat_musteri||'—') : (x.fiyat_musteri||x.fiyat_bayi||'—');
+      h += '<tr><td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.ad+'</strong>'+(x.aktif_madde?'<br><span style="font-size:10px;color:#5f6368">'+x.aktif_madde+'</span>':'')+'</td>';
+      h += '<td>'+(x.birim||'—')+'</td><td>'+(x.ambalaj||'—')+'</td><td>'+fiyat+'</td><td>'+(x.para||'—')+'</td></tr>';
+    });
+  }
+  h += '</table></div>';
+  tablo.innerHTML = h;
+}
+
+function urunEkleAc() {
+  document.getElementById('urunModalBaslik').textContent = '📋 Ürün Ekle';
+  document.getElementById('urId').value = '';
+  ['urAd','urAktifMadde','urBirim','urAmbalaj','urFiyatBayi','urFiyatMusteri'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('urPara').value = 'TL';
+  document.getElementById('urMsg').style.display = 'none';
+  urMarkaDoldur(); urKatDoldur();
+  modalAc('urunModal');
+}
+
+function urunDuzAc(x) {
+  document.getElementById('urunModalBaslik').textContent = '✏️ Ürün Düzenle';
+  document.getElementById('urId').value = x.id || '';
+  document.getElementById('urAd').value = x.ad || '';
+  document.getElementById('urAktifMadde').value = x.aktif_madde || '';
+  document.getElementById('urBirim').value = x.birim || '';
+  document.getElementById('urAmbalaj').value = x.ambalaj || '';
+  document.getElementById('urFiyatBayi').value = x.fiyat_bayi || '';
+  document.getElementById('urFiyatMusteri').value = x.fiyat_musteri || '';
+  document.getElementById('urPara').value = x.para || 'TL';
+  document.getElementById('urMsg').style.display = 'none';
+  urMarkaDoldur(x.marka_id, x.marka);
+  urKatDoldur(x.kat_id, x.kategori);
+  modalAc('urunModal');
+}
+
+function urMarkaDoldur(secilenId, secilenAd) {
+  var sel = document.getElementById('urMarkaSecim');
+  sel.innerHTML = '<option value="">Marka seçin</option>';
+  markalar.forEach(function(m) {
+    sel.innerHTML += '<option value="'+m.id+'" data-ad="'+m.ad+'"'+(m.id==secilenId?' selected':'')+'>'+m.ad+'</option>';
+  });
+  sel.innerHTML += '<option value="__yeni__">+ Yeni Marka</option>';
+  document.getElementById('urMarkaYeniGrup').style.display = 'none';
+  document.getElementById('urMarkaYeni').value = '';
+}
+
+function urKatDoldur(secilenId, secilenAd) {
+  var markaId = document.getElementById('urMarkaSecim').value;
+  var kats = kategoriler.filter(function(k){ return !markaId || markaId==='__yeni__' || k.marka_id==markaId; });
+  var sel = document.getElementById('urKatSecim');
+  sel.innerHTML = '<option value="">Kategori seçin</option>';
+  kats.forEach(function(k) {
+    sel.innerHTML += '<option value="'+k.id+'"'+(k.id==secilenId?' selected':'')+'>'+k.ad+'</option>';
+  });
+  sel.innerHTML += '<option value="__yeni__">+ Yeni Kategori</option>';
+  document.getElementById('urKatYeniGrup').style.display = 'none';
+  document.getElementById('urKatYeni').value = '';
+}
+
+function urMarkaSecimDeg() {
+  var v = document.getElementById('urMarkaSecim').value;
+  document.getElementById('urMarkaYeniGrup').style.display = v==='__yeni__' ? 'block' : 'none';
+  urKatDoldur();
+}
+
+function urKatSecimDeg() {
+  var v = document.getElementById('urKatSecim').value;
+  document.getElementById('urKatYeniGrup').style.display = v==='__yeni__' ? 'block' : 'none';
+}
+
+function urunKaydet() {
+  var m = document.getElementById('urMsg');
+  var markaSecim = document.getElementById('urMarkaSecim').value;
+  var katSecim = document.getElementById('urKatSecim').value;
+  var markaYeni = document.getElementById('urMarkaYeni').value.trim();
+  var katYeni = document.getElementById('urKatYeni').value.trim();
+  var ad = document.getElementById('urAd').value.trim();
+  if(!ad){ mesajGoster(m,'Ürün adı zorunlu',false); return; }
+  if(!markaSecim){ mesajGoster(m,'Marka seçin',false); return; }
+  if(markaSecim==='__yeni__' && !markaYeni){ mesajGoster(m,'Yeni marka adı girin',false); return; }
+  if(!katSecim){ mesajGoster(m,'Kategori seçin',false); return; }
+  if(katSecim==='__yeni__' && !katYeni){ mesajGoster(m,'Yeni kategori adı girin',false); return; }
+
+  var markaEl = document.getElementById('urMarkaSecim');
+  var secilenMarkaAd = markaSecim==='__yeni__' ? markaYeni : (markaEl.options[markaEl.selectedIndex]||{}).text;
+  var katEl = document.getElementById('urKatSecim');
+  var secilenKatAd = katSecim==='__yeni__' ? katYeni : (katEl.options[katEl.selectedIndex]||{}).text;
+
+  var d = {
+    id: document.getElementById('urId').value || null,
+    ad: ad,
+    markaId: markaSecim==='__yeni__' ? null : markaSecim,
+    markaAdi: secilenMarkaAd,
+    katId: katSecim==='__yeni__' ? null : katSecim,
+    katAdi: secilenKatAd,
+    aktifMadde: document.getElementById('urAktifMadde').value.trim(),
+    birim: document.getElementById('urBirim').value.trim(),
+    ambalaj: document.getElementById('urAmbalaj').value.trim(),
+    fiyatBayi: parseFloat(document.getElementById('urFiyatBayi').value)||null,
+    fiyatMusteri: parseFloat(document.getElementById('urFiyatMusteri').value)||null,
+    para: document.getElementById('urPara').value
+  };
+  google.script.run.withSuccessHandler(function(s){
+    var r=JSON.parse(s); mesajGoster(m, r.mesaj||r.hata, r.basarili);
+    if(r.basarili){ setTimeout(function(){ modalKapat('urunModal'); urunleriGoster(); getDashboard(); }, 800); }
+  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).urunKaydet(JSON.stringify(d));
+}
+
 function sekmeAc(btn, panelId){
   var ic=document.getElementById('icerik');
   ic.querySelectorAll('.sekme').forEach(function(s){s.classList.remove('aktif');});
