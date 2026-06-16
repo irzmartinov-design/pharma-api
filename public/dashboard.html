@@ -390,6 +390,12 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
         var hepsi = sabit.concat(kurParalar.filter(function(p){ return sabit.indexOf(p) === -1; }));
         return JSON.stringify(hepsi);
       });
+    },
+    getUrunListesi: function() {
+      var o = _oturumStore.get() || {};
+      return _api('getUrunListesi', { kullaniciId: o.id, rol: o.rol }).then(function(r) {
+        return JSON.stringify(r.liste || []);
+      });
     }
   };
 

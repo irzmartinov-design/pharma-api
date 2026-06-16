@@ -9,10 +9,10 @@ export default async function handler(req) {
     let rows;
     if (rol === 'Admin') {
       rows = await sql`
-        SELECT u.*, fb.fiyat_admin, fb.para_admin, fb.fiyat_bayi, fb.para_bayi, fb.kar_yuzde
+        SELECT DISTINCT ON (u.id) u.*, fb.fiyat_admin, fb.para_admin, fb.fiyat_bayi, fb.para_bayi, fb.kar_yuzde
         FROM urunler u
         LEFT JOIN fiyat_bayi fb ON fb.urun_id = u.id AND fb.durum = 'Genel'
-        WHERE u.aktif = TRUE ORDER BY u.marka, u.kategori, u.ad`;
+        WHERE u.aktif = TRUE ORDER BY u.id, fb.id DESC NULLS LAST`;
     } else if (rol === 'Bayi') {
       rows = await sql`
         SELECT u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
