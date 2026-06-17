@@ -468,6 +468,7 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
     fiyatBayiKaydet: 'fiyatBayiKaydet',
     bayiGenelFiyatGuncelle: 'bayiGenelFiyatGuncelle',
     fiyatMusteriKaydet: 'fiyatMusteriKaydet',
+    musteriOzelFiyatGuncelle: 'musteriOzelFiyatGuncelle',
     paraBirimiDegistirFB: 'paraBirimiDegistir',
     paraBirimiDegistirFM: 'paraBirimiDegistir',
     bayiFiyatSifirlaFB: 'bayiFiyatSifirla',
@@ -950,7 +951,7 @@ function bayiFiyatPaneli(pOps, onceMusteriId) {
     filterBar('mof') +
     '<div class="form-row">' +
       '<div class="form-group"><label>Para Birimi *</label><select id="moPara">'+pOps+'</select></div>' +
-      '<div class="form-group"><label>Mod</label><select id="moMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
+      '<div class="form-group"><label>Mod</label><select id="moMod"><option value="birim">Birim</option><option value="%">%</option></select></div>' +
       '<div class="form-group"><label>Fiyat</label><input type="number" id="moFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
     '<button class="btn btn-success btn-sm" onclick="musteriOzelKaydet()">💾 Kaydet</button>' +
@@ -983,12 +984,15 @@ function bgTabloYukle() {
 
 function bayiGenelKaydet() {
   var m=document.getElementById('bgMsg');
+  var o=_oturumStore.get()||{};
+  if(!o.id){ mesajGoster(m,'Oturum hatası',false); return; }
   var para=document.getElementById('bgPara').value;
   if(!para){ mesajGoster(m,'Para birimi seçin',false); return; }
   var fV=document.getElementById('bgFiyat').value;
   if(fV===''){ mesajGoster(m,'Fiyat girin',false); return; }
-  var d={marka:getVal('bgfFM'), kategori:getVal('bgfFK'), urun:getVal('bgfFU'),
-    para:para, mod:document.getElementById('bgMod').value, fiyat:parseFloat(fV)};
+  var mod=document.getElementById('bgMod').value;
+  var d={bayiId:o.id, marka:getVal('bgfFM'), kategori:getVal('bgfFK'), urun:getVal('bgfFU'),
+    para:para, mod:mod, fiyat:parseFloat(fV), yuzde:parseFloat(fV)};
   google.script.run.withSuccessHandler(function(s){
     var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili); if(r.basarili) bgTabloYukle();
   }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).bayiGenelFiyatGuncelle(JSON.stringify(d));
@@ -1009,15 +1013,18 @@ function moTabloYukle() {
 function musteriOzelKaydet() {
   var m=document.getElementById('moMsg'), mid=document.getElementById('moMusteri').value;
   if(!mid){ mesajGoster(m,'Müşteri seçin',false); return; }
+  var o=_oturumStore.get()||{};
+  if(!o.id){ mesajGoster(m,'Oturum hatası',false); return; }
   var para=document.getElementById('moPara').value;
   if(!para){ mesajGoster(m,'Para birimi seçin',false); return; }
   var fV=document.getElementById('moFiyat').value;
   if(fV===''){ mesajGoster(m,'Fiyat girin',false); return; }
-  var d={musteriId:mid, marka:getVal('mofFM'), kategori:getVal('mofFK'), urun:getVal('mofFU'),
-    para:para, mod:document.getElementById('moMod').value, fiyat:parseFloat(fV)};
+  var mod=document.getElementById('moMod').value;
+  var d={bayiId:o.id, musteriId:mid, marka:getVal('mofFM'), kategori:getVal('mofFK'), urun:getVal('mofFU'),
+    para:para, mod:mod, fiyat:parseFloat(fV), yuzde:parseFloat(fV)};
   google.script.run.withSuccessHandler(function(s){
     var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili); if(r.basarili) moTabloYukle();
-  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).fiyatMusteriKaydet(JSON.stringify(d));
+  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).musteriOzelFiyatGuncelle(JSON.stringify(d));
 }
 
 function bayiParaDegistir() {
