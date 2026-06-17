@@ -289,7 +289,9 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
           return {
             urun: x.urun_adi, marka: x.marka, kategori: x.kategori,
             birim: x.birim, ambalaj: x.ambalaj,
-            genelFiyat: x.genel_fiyat, genelPara: x.genel_para,
+            genelFiyat: x.genel_fiyat_cevrilmis ?? x.genel_fiyat,
+            genelFiyatTK: x.genel_fiyat,
+            genelPara: x.genel_para,
             fiyat: x.fiyat, para: x.para,
             karYuzde: parseFloat(x.kar_yuzde) || 0,
             genel_mi: !!x.genel_mi,
@@ -798,7 +800,10 @@ function tabloRender(prefix) {
             : (x.karYuzde||0).toFixed(1)+'%');
       h+='<tr style="cursor:pointer" onclick="satirSec(\'bf\','+i+')" title="Formu doldur">';
       h+='<td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.urun+'</strong></td>';
-      h+='<td>'+(x.genelFiyat||'—')+' <span style="color:#5f6368;font-size:10px">'+(x.genelPara||'')+'</span></td>';
+      var gfLabel = x.has_bf && x.para !== x.genelPara
+        ? (x.genelFiyat||'—')+' <span style="color:#5f6368;font-size:10px">'+x.para+' (='+x.genelFiyatTK+' '+x.genelPara+')</span>'
+        : (x.genelFiyat||'—')+' <span style="color:#5f6368;font-size:10px">'+(x.has_bf?x.para:x.genelPara)+'</span>';
+      h+='<td>'+gfLabel+'</td>';
       h+='<td>'+ozelFiyat+'</td><td>'+ozelPara+'</td>';
       h+='<td><span style="color:'+(durum=='Özel'?'#d93025':'#188038')+';font-weight:600">'+durum+'</span></td>';
       h+='<td>'+farkStr+'</td></tr>';

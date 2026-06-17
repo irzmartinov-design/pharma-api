@@ -7,6 +7,11 @@ export default async function handler(req) {
     if (!bayiId) return allowCors(err('Bayi ID zorunlu'));
     const sql = getDb();
 
+    const kurRows = await sql`SELECT anahtar, deger FROM ayarlar WHERE anahtar LIKE 'kur_%'`;
+    const kurMap = {};
+    kurRows.forEach(r => { kurMap[r.anahtar.replace('kur_', '')] = parseFloat(r.deger); });
+    const getKur = (p) => kurMap[p] || 1;
+
     let rows;
     if (marka && kategori && urun) {
       rows = await sql`
@@ -50,23 +55,31 @@ export default async function handler(req) {
         ORDER BY u.marka, u.kategori, u.ad`;
     }
 
-    // Normalize: özel fiyat yoksa genel fiyatı kullan
+    // Normalize
     const fiyatlar = rows.map(r => {
       const karYuzde = parseFloat(r.kar_yuzde) || 0;
       const has_bf = r.id !== null;
       const genel_mi = !has_bf || karYuzde === 0;
+      const ozelPara = r.para || r.genel_para || 'Tokken';
+      const genelPara = r.genel_para || 'Tokken';
+      const genelFiyatHam = parseFloat(r.genel_fiyat) || 0;
+      // Genel fiyatı bayi'nin para birimine çevir (kur üzerinden)
+      const genelFiyatCevrilmis = genelPara !== ozelPara
+        ? genelFiyatHam * getKur(ozelPara) / getKur(genelPara)
+        : genelFiyatHam;
       return {
-        urun_id:     r.urun_id,
-        urun_adi:    r.urun_adi,
-        marka:       r.marka,
-        kategori:    r.kategori,
-        birim:       r.birim,
-        ambalaj:     r.ambalaj,
-        genel_fiyat: parseFloat(r.genel_fiyat) || 0,
-        genel_para:  r.genel_para || 'Tokken',
-        fiyat:       parseFloat(r.fiyat ?? r.genel_fiyat) || 0,
-        para:        r.para || r.genel_para || 'Tokken',
-        kar_yuzde:   karYuzde,
+        urun_id:              r.urun_id,
+        urun_adi:             r.urun_adi,
+        marka:                r.marka,
+        kategori:             r.kategori,
+        birim:                r.birim,
+        ambalaj:              r.ambalaj,
+        genel_fiyat:          genelFiyatHam,
+        genel_fiyat_cevrilmis: genelFiyatCevrilmis,
+        genel_para:           genelPara,
+        fiyat:                parseFloat(r.fiyat ?? r.genel_fiyat) || 0,
+        para:                 ozelPara,
+        kar_yuzde:            karYuzde,
         genel_mi,
         has_bf,
       };
