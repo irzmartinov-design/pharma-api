@@ -19,19 +19,26 @@ export default async function handler(req) {
         WHERE u.aktif = TRUE ORDER BY u.id, fb.id DESC NULLS LAST`;
     } else if (rol === 'Bayi') {
       rows = await sql`
-        SELECT u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
-               fb.fiyat_admin, fb.para_admin, fb.fiyat_bayi, fb.para_bayi, fb.kar_yuzde, fb.bayi_kar
-        FROM fiyat_bayi fb
-        JOIN urunler u ON u.id = fb.urun_id
-        WHERE fb.bayi_id = ${kullaniciId} AND u.aktif = TRUE
+        SELECT u.id, u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
+               COALESCE(fb.fiyat_admin, u.fiyat_bayi)  AS fiyat_admin,
+               COALESCE(fb.para_admin,  u.para)         AS para_admin,
+               COALESCE(fb.fiyat_bayi,  u.fiyat_bayi)  AS fiyat_bayi,
+               COALESCE(fb.para_bayi,   u.para)         AS para_bayi,
+               fb.kar_yuzde, fb.bayi_kar,
+               CASE WHEN fb.id IS NULL THEN TRUE ELSE FALSE END AS genel_fiyat
+        FROM urunler u
+        LEFT JOIN fiyat_bayi fb ON fb.urun_id = u.id AND fb.bayi_id = ${kullaniciId}
+        WHERE u.aktif = TRUE
         ORDER BY u.marka, u.kategori, u.ad`;
     } else {
       rows = await sql`
-        SELECT u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
-               fm.fiyat, fm.para
-        FROM fiyat_musteri fm
-        JOIN urunler u ON u.id = fm.urun_id
-        WHERE fm.musteri_id = ${kullaniciId} AND u.aktif = TRUE
+        SELECT u.id, u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
+               COALESCE(fm.fiyat, u.fiyat_musteri) AS fiyat,
+               COALESCE(fm.para,  u.para)           AS para,
+               CASE WHEN fm.id IS NULL THEN TRUE ELSE FALSE END AS genel_fiyat
+        FROM urunler u
+        LEFT JOIN fiyat_musteri fm ON fm.urun_id = u.id AND fm.musteri_id = ${kullaniciId}
+        WHERE u.aktif = TRUE
         ORDER BY u.marka, u.kategori, u.ad`;
     }
 
