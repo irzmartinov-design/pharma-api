@@ -2,15 +2,20 @@ import { getDb, ok, err, allowCors } from './_db.js';
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
   try {
-    const { bayiId, urunId, fiyat, para, mod, yuzde, marka, kategori, urun } = await req.json();
+    const { bayiId, fiyat, para, mod, yuzde, marka, kategori, urun } = await req.json();
+    if (!bayiId) return allowCors(err('Bayi ID zorunlu'));
     const sql = getDb();
 
-    const where = sql`bayi_id=${bayiId}
-      AND (${marka||null} IS NULL OR marka=${marka})
-      AND (${kategori||null} IS NULL OR kategori=${kategori})
-      AND (${urun||null} IS NULL OR urun_adi=${urun})`;
-
-    const rows = await sql`SELECT * FROM fiyat_bayi WHERE ${where}`;
+    let rows;
+    if (marka && kategori && urun) {
+      rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka} AND kategori=${kategori} AND urun_adi=${urun}`;
+    } else if (marka && kategori) {
+      rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka} AND kategori=${kategori}`;
+    } else if (marka) {
+      rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka}`;
+    } else {
+      rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId}`;
+    }
     let guncellenen = 0;
 
     for (const row of rows) {

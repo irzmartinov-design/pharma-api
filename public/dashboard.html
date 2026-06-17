@@ -251,9 +251,13 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
     sayfalariGizle:  function() { return Promise.resolve(JSON.stringify({ basarili: true })); },
     showSiparisForm: function() { window.location.href = 'siparis.html'; return Promise.resolve(''); },
     getParaListesi: function() {
+      var o = _oturumStore.get() || {};
       return _api('getKurlar', {}).then(function(r) {
-        var paralar = Object.keys(r.kurlar || { TL:1, USD:33, EUR:36 });
-        return JSON.stringify(paralar);
+        var sabit = ['TL', 'USD', 'EUR'];
+        if (o.rol === 'Admin') sabit.push('Tokken');
+        var kurParalar = Object.keys(r.kurlar || {});
+        var hepsi = sabit.concat(kurParalar.filter(function(p){ return sabit.indexOf(p) === -1 && p !== 'Tokken'; }));
+        return JSON.stringify(hepsi);
       });
     },
     getKurlar: function() {
@@ -382,13 +386,27 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
         return JSON.stringify(r.adresler || []);
       });
     },
-    getParaListesi: function() {
-      return _api('getKurlar', {}).then(function(r) {
-        var sabit = ['TL', 'USD', 'EUR', 'Tokken'];
-        var kurParalar = Object.keys(r.kurlar || {});
-        var hepsi = sabit.concat(kurParalar.filter(function(p){ return sabit.indexOf(p) === -1; }));
-        return JSON.stringify(hepsi);
-      });
+    bayiGenelFiyatGuncelle: function(data) {
+      var o = _oturumStore.get() || {};
+      var d = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      d.bayiId = d.bayiId || o.id;
+      return _api('bayiGenelFiyatGuncelle', d).then(function(r) { return JSON.stringify(r); });
+    },
+    paraBirimiDegistirFB: function(data) {
+      var o = _oturumStore.get() || {};
+      var d = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      d.tablo = 'FB';
+      d.rol = o.rol;
+      d.bayiId = d.bayiId || o.id;
+      return _api('paraBirimiDegistir', d).then(function(r) { return JSON.stringify(r); });
+    },
+    paraBirimiDegistirFM: function(data) {
+      var o = _oturumStore.get() || {};
+      var d = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      d.tablo = 'FM';
+      d.rol = o.rol;
+      d.musteriId = d.musteriId || o.id;
+      return _api('paraBirimiDegistir', d).then(function(r) { return JSON.stringify(r); });
     },
     getUrunListesi: function() {
       var o = _oturumStore.get() || {};
@@ -494,7 +512,7 @@ function initArayuz() {
   var basliklar = { Admin:'Admin Panel', Bayi:'Bayi Panel', Musteri:'Müşteri Panel' };
   document.getElementById('baslik').textContent = basliklar[rol] || 'Panel';
   if (rol == 'Admin') {
-    ['btnKur','btnMusteriEkle','btnBayiEkle','btnBayiler','btnMusteriler'].forEach(function(id){ document.getElementById(id).classList.remove('gizli'); });
+    ['btnKur','btnBayiEkle','btnBayiler','btnMusteriler'].forEach(function(id){ document.getElementById(id).classList.remove('gizli'); });
   } else if (rol == 'Bayi') {
     ['btnKur','btnMusteriEkle','btnMusteriler'].forEach(function(id){ document.getElementById(id).classList.remove('gizli'); });
   }

@@ -14,34 +14,46 @@ export default async function handler(req) {
     let guncellenen = 0;
 
     if (tablo === 'FB') {
-      const rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId}
-        AND (${marka||null} IS NULL OR marka=${marka})
-        AND (${kategori||null} IS NULL OR kategori=${kategori})
-        AND (${urun||null} IS NULL OR urun_adi=${urun})`;
+      let rows;
+      if (marka && kategori && urun) {
+        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka} AND kategori=${kategori} AND urun_adi=${urun}`;
+      } else if (marka && kategori) {
+        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka} AND kategori=${kategori}`;
+      } else if (marka) {
+        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka}`;
+      } else {
+        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId}`;
+      }
 
       for (const row of rows) {
         if (rol === 'Admin') {
           const eskiKurAdmin = await getKur(sql, row.para_admin);
-          const yeniFiyatAdmin = row.fiyat_admin * yeniKur / eskiKurAdmin;
+          const yeniFiyatAdmin = parseFloat(row.fiyat_admin) * yeniKur / eskiKurAdmin;
           const eskiKurBayi = await getKur(sql, row.para_bayi);
-          const yeniFiyatBayi = row.fiyat_bayi * yeniKur / eskiKurBayi;
+          const yeniFiyatBayi = parseFloat(row.fiyat_bayi) * yeniKur / eskiKurBayi;
           await sql`UPDATE fiyat_bayi SET fiyat_admin=${yeniFiyatAdmin}, para_admin=${yeniPara}, fiyat_bayi=${yeniFiyatBayi}, para_bayi=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
         } else {
           const eskiKur = await getKur(sql, row.para_bayi);
-          const yeniFiyat = row.fiyat_bayi * yeniKur / eskiKur;
+          const yeniFiyat = parseFloat(row.fiyat_bayi) * yeniKur / eskiKur;
           await sql`UPDATE fiyat_bayi SET fiyat_bayi=${yeniFiyat}, para_bayi=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
         }
         guncellenen++;
       }
     } else {
-      const rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId}
-        AND (${marka||null} IS NULL OR marka=${marka})
-        AND (${kategori||null} IS NULL OR kategori=${kategori})
-        AND (${urun||null} IS NULL OR urun_adi=${urun})`;
+      let rows;
+      if (marka && kategori && urun) {
+        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId} AND marka=${marka} AND kategori=${kategori} AND urun_adi=${urun}`;
+      } else if (marka && kategori) {
+        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId} AND marka=${marka} AND kategori=${kategori}`;
+      } else if (marka) {
+        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId} AND marka=${marka}`;
+      } else {
+        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId}`;
+      }
 
       for (const row of rows) {
         const eskiKur = await getKur(sql, row.para);
-        const yeniFiyat = row.fiyat * yeniKur / eskiKur;
+        const yeniFiyat = parseFloat(row.fiyat) * yeniKur / eskiKur;
         await sql`UPDATE fiyat_musteri SET fiyat=${yeniFiyat}, para=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
         guncellenen++;
       }
