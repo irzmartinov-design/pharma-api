@@ -742,17 +742,12 @@ function filtreUrunleriGuncelle(prefix, data) {
   Object.keys(uMap).sort().forEach(function(u){el.innerHTML+='<option value="'+u+'">'+u+'</option>';});
 }
 
-var _formParaMap = { bf:'bPara', bgf:'bgPara', mof:'moPara', gf:'gPara' };
-
 function tabloRender(prefix) {
   var data=filtreVeriAl(prefix);
   var tabloId=prefix=='gf'?'gTablo':(prefix=='bf'?'bTablo':(prefix=='bgf'?'bgTablo':'moTablo'));
   var tablo=document.getElementById(tabloId); if(!tablo) return;
   var marka=getVal(prefix+'FM'),kat=getVal(prefix+'FK'),urun=getVal(prefix+'FU');
-  var filterPara=getVal(prefix+'FP');
-  // Eğer filterBar para boşsa, form Para Birimi * de filtre görevi görür
-  var formPara=getVal(_formParaMap[prefix]||'');
-  var para=filterPara||formPara;
+  var para=getVal(prefix+'FP');
   var rows=data.filter(function(r){
     if(marka&&r.marka!=marka) return false;
     if(kat&&r.kategori!=kat) return false;
@@ -834,7 +829,7 @@ function adminFiyatPaneli(pOps, onceBayiId) {
     '<div class="form-group"><label>Bayi *</label><select id="bBayi" onchange="bTabloYukle()">'+by+'</select></div>' +
     filterBar('bf') +
     '<div class="form-row">' +
-      '<div class="form-group"><label>Para Birimi *</label><select id="bPara" onchange="tabloRender(\'bf\')">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="bPara">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="bMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
       '<div class="form-group"><label>Fiyat</label><input type="number" id="bFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
@@ -907,7 +902,7 @@ function bayiFiyatPaneli(pOps, onceMusteriId) {
     '<div id="sfBGn" class="sekme-panel aktif">' +
     filterBar('bgf') +
     '<div class="form-row">' +
-      '<div class="form-group"><label>Para Birimi *</label><select id="bgPara" onchange="tabloRender(\'bgf\')">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="bgPara">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="bgMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
       '<div class="form-group"><label>Müşteri Fiyatı</label><input type="number" id="bgFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
@@ -922,7 +917,7 @@ function bayiFiyatPaneli(pOps, onceMusteriId) {
     '<div class="form-group"><label>Müşteri *</label><select id="moMusteri" onchange="moTabloYukle()">'+msOps+'</select></div>' +
     filterBar('mof') +
     '<div class="form-row">' +
-      '<div class="form-group"><label>Para Birimi *</label><select id="moPara" onchange="tabloRender(\'mof\')">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="moPara">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="moMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
       '<div class="form-group"><label>Fiyat</label><input type="number" id="moFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
