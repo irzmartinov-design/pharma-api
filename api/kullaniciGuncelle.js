@@ -8,20 +8,33 @@ async function sha256(text) {
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
   try {
-    const body = typeof (await req.clone().json().catch(() => null)) === 'object'
-      ? await req.json() : JSON.parse(await req.text());
-    const d = typeof body === 'string' ? JSON.parse(body) : body;
-    const { id, ad, email, tel, durum, sifre } = d;
+    const raw = await req.json();
+    const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const { id, ad, email, tel, durum, sifre, para } = d;
     if (!id) return allowCors(err('ID zorunlu'));
 
     const sql = getDb();
-    const aktif = durum === 'Aktif';
+    const hash = sifre ? await sha256(sifre) : null;
+    const hasDurum = durum !== undefined;
+    const hasPara = para !== undefined;
+    const aktif = hasDurum ? (durum === 'Aktif') : null;
 
-    if (sifre) {
-      const hash = await sha256(sifre);
+    if (hash && hasDurum && hasPara) {
+      await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, aktif=${aktif}, sifre=${hash}, para=${para} WHERE id=${id}`;
+    } else if (hash && hasDurum) {
       await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, aktif=${aktif}, sifre=${hash} WHERE id=${id}`;
-    } else {
+    } else if (hash && hasPara) {
+      await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, sifre=${hash}, para=${para} WHERE id=${id}`;
+    } else if (hash) {
+      await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, sifre=${hash} WHERE id=${id}`;
+    } else if (hasDurum && hasPara) {
+      await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, aktif=${aktif}, para=${para} WHERE id=${id}`;
+    } else if (hasDurum) {
       await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, aktif=${aktif} WHERE id=${id}`;
+    } else if (hasPara) {
+      await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, para=${para} WHERE id=${id}`;
+    } else {
+      await sql`UPDATE kullanicilar SET ad=${ad}, email=${email} WHERE id=${id}`;
     }
 
     return allowCors(ok({ mesaj: 'Güncellendi' }));

@@ -50,7 +50,7 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
   <div class="kart">
     <h3>📊 Hızlı İşlemler</h3>
     <div style="display:flex;flex-direction:column;gap:6px">
-      <button class="btn btn-outline" onclick="modalAc('sifreModal')">⚙️ Hesap Ayarları</button>
+      <button class="btn btn-outline" onclick="profilAc()">⚙️ Hesap Ayarları</button>
       <button class="btn btn-primary" onclick="goster('bekleyen')">⏳ Bekleyen Siparişler</button>
       <button class="btn btn-primary" onclick="goster('siparisler')">📦 Tüm Siparişler</button>
       <button class="btn btn-success gizli" id="btnSiparisVer" onclick="siparisFormAc()">🛒 Sipariş Ver</button>
@@ -194,14 +194,19 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
   <div style="margin-top:12px;text-align:right"><button class="btn btn-outline btn-sm" onclick="modalKapat('kurModal')">Kapat</button></div>
 </div></div>
 
-<!-- Modal: Şifre Değiştir -->
+<!-- Modal: Hesap Ayarları -->
 <div id="sifreModal" class="modal"><div class="modal-content">
-  <h3 style="margin-bottom:16px">⚙️ Şifre Değiştir</h3>
-  <div class="form-group"><label>Eski Şifre</label><input type="password" id="eskiS"></div>
-  <div class="form-group"><label>Yeni Şifre</label><input type="password" id="yeniS"></div>
-  <div class="form-group"><label>Yeni Şifre (Tekrar)</label><input type="password" id="yeniS2"></div>
+  <h3 style="margin-bottom:16px">⚙️ Hesap Ayarları</h3>
+  <div class="form-group"><label>Ad Soyad</label><input id="haAd" placeholder="Ad Soyad"></div>
+  <div class="form-group"><label>Email</label><input type="email" id="haEmail" placeholder="email@example.com"></div>
+  <div class="form-group"><label>Varsayılan Para Birimi</label><select id="haPara"><option value="">Seçiniz</option></select></div>
+  <hr class="separator">
+  <p style="font-size:11px;font-weight:600;color:#5f6368;margin-bottom:8px">🔐 Şifre Değiştir (boş bırakılırsa değişmez)</p>
+  <div class="form-group"><label>Eski Şifre</label><input type="password" id="eskiS" placeholder="Mevcut şifreniz"></div>
+  <div class="form-group"><label>Yeni Şifre</label><input type="password" id="yeniS" placeholder="En az 3 karakter"></div>
+  <div class="form-group"><label>Yeni Şifre (Tekrar)</label><input type="password" id="yeniS2" placeholder="Yeni şifrenizi tekrar girin"></div>
   <div style="display:flex;gap:8px;margin-top:16px">
-    <button class="btn btn-success" onclick="sifreDegistir()" style="flex:1">💾 Kaydet</button>
+    <button class="btn btn-success" onclick="profilKaydet()" style="flex:1">💾 Kaydet</button>
     <button class="btn btn-outline" onclick="modalKapat('sifreModal')" style="flex:1">İptal</button>
   </div>
   <div id="sifreMsg" class="msg"></div>
@@ -414,6 +419,23 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
       return _api('getUrunListesi', { kullaniciId: o.id, rol: o.rol }).then(function(r) {
         return JSON.stringify(r.liste || []);
       });
+    },
+    getProfilBilgisi: function() {
+      var o = _oturumStore.get() || {};
+      return _api('getProfilBilgisi', { kullaniciId: o.id }).then(function(r) {
+        return JSON.stringify(r.profil || {});
+      });
+    },
+    profilGuncelle: function(data) {
+      var o = _oturumStore.get() || {};
+      var d = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      d.id = o.id;
+      return _api('kullaniciGuncelle', d).then(function(r) {
+        if (r.basarili) {
+          if (d.ad) { o.ad = d.ad; localStorage.setItem('_oturum', JSON.stringify(o)); }
+        }
+        return JSON.stringify(r);
+      });
     }
   };
 
@@ -491,6 +513,7 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
 
 var rol='Admin', bayiler=[], musteriler=[], markalar=[], kategoriler=[], oturum=null;
 var _gFiyatData=[], _bFiyatData=[], _bgFiyatData=[], _moFiyatData=[];
+var _paraListesi=[];
 
 // ── INIT ──────────────────────────────────────────────────────────────
 window.onload = function() {
@@ -653,6 +676,7 @@ function fiyatlarGoster(bayiIdParam, musteriIdParam) {
   google.script.run
     .withSuccessHandler(function(s) {
       var paralar = JSON.parse(s);
+      _paraListesi = paralar;
       var pOps = '<option value="">Para birimi seçin</option>' + paralar.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
       if (rol == 'Admin') adminFiyatPaneli(pOps, bayiIdParam, musteriIdParam);
       else bayiFiyatPaneli(pOps, musteriIdParam);
@@ -674,7 +698,7 @@ function filterBar(prefix) {
     '<select id="'+prefix+'FK" onchange="filtreKatDeg(\''+prefix+'\')" style="font-size:11px;padding:4px 6px"><option value="">Tümü</option></select></div>' +
     '<div class="form-group" style="flex:1;min-width:120px"><label style="font-size:10px;color:#5f6368">Ürün</label>' +
     '<select id="'+prefix+'FU" onchange="tabloRender(\''+prefix+'\')" style="font-size:11px;padding:4px 6px"><option value="">Tümü</option></select></div>' +
-    '<div class="form-group" style="flex:0 0 120px"><label style="font-size:10px;color:#5f6368">💱 Para Birimi Değiştir</label>' +
+    '<div class="form-group" style="flex:0 0 120px"><label style="font-size:10px;color:#5f6368">Para Birimi ▼</label>' +
     '<select id="'+prefix+'FP" onchange="tabloRender(\''+prefix+'\')" style="font-size:11px;padding:4px 6px"><option value="">Tümü</option></select></div>' +
     '</div>';
 }
@@ -686,6 +710,8 @@ function filtreVeriDoldur(prefix, data, paraSutun) {
     var pr = paraSutun=='paraBayi'?(r.paraBayi||r.para||''):(r.para||'');
     if(pr) pMap[pr]=1;
   });
+  // Tüm bilinen para birimlerini ekle (sadece veridekiler değil)
+  _paraListesi.forEach(function(p){ if(p) pMap[p]=1; });
   var mEl=document.getElementById(prefix+'FM'), pEl=document.getElementById(prefix+'FP');
   if(mEl){ mEl.innerHTML='<option value="">Tümü</option>'; Object.keys(mMap).sort().forEach(function(m){mEl.innerHTML+='<option value="'+m+'">'+m+'</option>';}); }
   if(pEl){ pEl.innerHTML='<option value="">Tümü</option>'; Object.keys(pMap).sort().forEach(function(p){pEl.innerHTML+='<option value="'+p+'">'+p+'</option>';}); }
@@ -716,11 +742,17 @@ function filtreUrunleriGuncelle(prefix, data) {
   Object.keys(uMap).sort().forEach(function(u){el.innerHTML+='<option value="'+u+'">'+u+'</option>';});
 }
 
+var _formParaMap = { bf:'bPara', bgf:'bgPara', mof:'moPara', gf:'gPara' };
+
 function tabloRender(prefix) {
   var data=filtreVeriAl(prefix);
   var tabloId=prefix=='gf'?'gTablo':(prefix=='bf'?'bTablo':(prefix=='bgf'?'bgTablo':'moTablo'));
   var tablo=document.getElementById(tabloId); if(!tablo) return;
-  var marka=getVal(prefix+'FM'),kat=getVal(prefix+'FK'),urun=getVal(prefix+'FU'),para=getVal(prefix+'FP');
+  var marka=getVal(prefix+'FM'),kat=getVal(prefix+'FK'),urun=getVal(prefix+'FU');
+  var filterPara=getVal(prefix+'FP');
+  // Eğer filterBar para boşsa, form Para Birimi * de filtre görevi görür
+  var formPara=getVal(_formParaMap[prefix]||'');
+  var para=filterPara||formPara;
   var rows=data.filter(function(r){
     if(marka&&r.marka!=marka) return false;
     if(kat&&r.kategori!=kat) return false;
@@ -802,7 +834,7 @@ function adminFiyatPaneli(pOps, onceBayiId) {
     '<div class="form-group"><label>Bayi *</label><select id="bBayi" onchange="bTabloYukle()">'+by+'</select></div>' +
     filterBar('bf') +
     '<div class="form-row">' +
-      '<div class="form-group"><label>Para Birimi *</label><select id="bPara">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="bPara" onchange="tabloRender(\'bf\')">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="bMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
       '<div class="form-group"><label>Fiyat</label><input type="number" id="bFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
@@ -875,7 +907,7 @@ function bayiFiyatPaneli(pOps, onceMusteriId) {
     '<div id="sfBGn" class="sekme-panel aktif">' +
     filterBar('bgf') +
     '<div class="form-row">' +
-      '<div class="form-group"><label>Para Birimi *</label><select id="bgPara">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="bgPara" onchange="tabloRender(\'bgf\')">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="bgMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
       '<div class="form-group"><label>Müşteri Fiyatı</label><input type="number" id="bgFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
@@ -890,7 +922,7 @@ function bayiFiyatPaneli(pOps, onceMusteriId) {
     '<div class="form-group"><label>Müşteri *</label><select id="moMusteri" onchange="moTabloYukle()">'+msOps+'</select></div>' +
     filterBar('mof') +
     '<div class="form-row">' +
-      '<div class="form-group"><label>Para Birimi *</label><select id="moPara">'+pOps+'</select></div>' +
+      '<div class="form-group"><label>Para Birimi *</label><select id="moPara" onchange="tabloRender(\'mof\')">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="moMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
       '<div class="form-group"><label>Fiyat</label><input type="number" id="moFiyat" step="0.01" placeholder="—"></div>' +
     '</div>' +
@@ -1186,16 +1218,75 @@ function kurEkle(){
   }).kurKaydet(p,parseFloat(dg));
 }
 
-// ── ŞİFRE ─────────────────────────────────────────────────────────────
-function sifreDegistir(){
-  var e=document.getElementById('eskiS').value, y1=document.getElementById('yeniS').value, y2=document.getElementById('yeniS2').value, m=document.getElementById('sifreMsg');
-  if(!e||!y1||!y2){ mesajGoster(m,'Tüm alanları doldurun',false); return; }
-  if(y1!=y2){ mesajGoster(m,'Şifreler eşleşmiyor',false); return; }
-  if(y1.length<3){ mesajGoster(m,'Şifre en az 3 karakter',false); return; }
-  google.script.run.withSuccessHandler(function(s){
-    var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili);
-    if(r.basarili) setTimeout(function(){modalKapat('sifreModal');},1500);
-  }).sifreDegistir(e,y1);
+// ── HESAP AYARLARI ────────────────────────────────────────────────────
+function profilAc() {
+  var m = document.getElementById('sifreMsg');
+  m.style.display = 'none';
+  ['eskiS','yeniS','yeniS2'].forEach(function(id){ document.getElementById(id).value=''; });
+  // Önce session'dan doldur, sonra DB'den taze veri çek
+  var o = JSON.parse(localStorage.getItem('_oturum') || '{}');
+  document.getElementById('haAd').value = o.ad || '';
+  document.getElementById('haEmail').value = o.email || '';
+  modalAc('sifreModal');
+  // Para listesi + güncel profil
+  google.script.run.withSuccessHandler(function(ps){
+    var paralar = JSON.parse(ps);
+    var sel = document.getElementById('haPara');
+    sel.innerHTML = '<option value="">Seçiniz</option>';
+    paralar.forEach(function(p){ sel.innerHTML += '<option value="'+p+'">'+p+'</option>'; });
+    // Profil bilgisi
+    google.script.run.withSuccessHandler(function(s){
+      var p = JSON.parse(s);
+      if(p.ad) document.getElementById('haAd').value = p.ad;
+      if(p.email) document.getElementById('haEmail').value = p.email;
+      if(p.para) sel.value = p.para;
+    }).getProfilBilgisi();
+  }).getParaListesi();
+}
+
+function profilKaydet() {
+  var m = document.getElementById('sifreMsg');
+  var ad = document.getElementById('haAd').value.trim();
+  var email = document.getElementById('haEmail').value.trim();
+  var para = document.getElementById('haPara').value;
+  var e = document.getElementById('eskiS').value;
+  var y1 = document.getElementById('yeniS').value;
+  var y2 = document.getElementById('yeniS2').value;
+
+  if(!ad){ mesajGoster(m,'Ad Soyad zorunlu',false); return; }
+
+  // Şifre alanı doluysa doğrula
+  var sifreDegisiyor = e || y1 || y2;
+  if(sifreDegisiyor){
+    if(!e||!y1||!y2){ mesajGoster(m,'Şifre değiştirmek için tüm şifre alanlarını doldurun',false); return; }
+    if(y1!=y2){ mesajGoster(m,'Yeni şifreler eşleşmiyor',false); return; }
+    if(y1.length<3){ mesajGoster(m,'Yeni şifre en az 3 karakter',false); return; }
+  }
+
+  var d = { ad: ad, email: email };
+  if(para) d.para = para;
+
+  mesajGoster(m,'Kaydediliyor...', true);
+
+  function sonuc(r) {
+    mesajGoster(m, r.mesaj || r.hata, r.basarili);
+    if(r.basarili) setTimeout(function(){ modalKapat('sifreModal'); }, 1200);
+  }
+
+  if(sifreDegisiyor) {
+    // Önce profil güncelle, sonra şifre değiştir
+    google.script.run.withSuccessHandler(function(s){
+      var r = JSON.parse(s);
+      if(!r.basarili){ mesajGoster(m, r.hata, false); return; }
+      google.script.run.withSuccessHandler(function(s2){
+        sonuc(JSON.parse(s2));
+      }).withFailureHandler(function(){ mesajGoster(m,'Şifre güncellenemedi',false); }).sifreDegistir(e, y1);
+    }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).profilGuncelle(JSON.stringify(d));
+  } else {
+    google.script.run.withSuccessHandler(function(s){
+      sonuc(JSON.parse(s));
+    }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).profilGuncelle(JSON.stringify(d));
+  }
 }
 
 // ── YARDIMCILAR ───────────────────────────────────────────────────────
