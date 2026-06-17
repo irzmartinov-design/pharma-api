@@ -53,8 +53,8 @@ export default async function handler(req) {
     // Normalize: özel fiyat yoksa genel fiyatı kullan
     const fiyatlar = rows.map(r => {
       const karYuzde = parseFloat(r.kar_yuzde) || 0;
-      // kar_yuzde = 0 VE kayıt var → markup yok → genel fiyatla eşdeğer → Genel göster
-      const genel_mi = r.genel_mi || (r.id !== null && karYuzde === 0);
+      const has_bf = r.id !== null;
+      const genel_mi = !has_bf || karYuzde === 0;
       return {
         urun_id:     r.urun_id,
         urun_adi:    r.urun_adi,
@@ -63,11 +63,12 @@ export default async function handler(req) {
         birim:       r.birim,
         ambalaj:     r.ambalaj,
         genel_fiyat: parseFloat(r.genel_fiyat) || 0,
-        genel_para:  r.genel_para || 'TL',
+        genel_para:  r.genel_para || 'Tokken',
         fiyat:       parseFloat(r.fiyat ?? r.genel_fiyat) || 0,
-        para:        r.para || r.genel_para || 'TL',
+        para:        r.para || r.genel_para || 'Tokken',
         kar_yuzde:   karYuzde,
         genel_mi,
+        has_bf,
       };
     });
 
