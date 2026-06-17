@@ -764,12 +764,12 @@ function tabloRender(prefix) {
   if(!rows.length){tablo.innerHTML='<p style="color:#5f6368;font-size:12px;padding:8px">Eşleşen kayıt yok.</p>';return;}
   var h='<div class="tablo-ici"><table>';
   if(prefix=='gf'){
-    h+='<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>F.Bayi</th><th>F.Müşteri</th><th>Para</th></tr>';
+    h+='<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>F.Bayi (Tokken)</th><th>Para</th></tr>';
     rows.forEach(function(x){
       var i=data.indexOf(x);
       h+='<tr style="cursor:pointer" onclick="satirSec(\'gf\','+i+')" title="Formu doldur">';
       h+='<td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.urun+'</strong></td>';
-      h+='<td>'+x.fiyatBayi+'</td><td>'+x.fiyatMusteri+'</td><td>'+x.para+'</td></tr>';
+      h+='<td>'+(x.fiyatBayi||'—')+'</td><td>'+(x.para||'—')+'</td></tr>';
     });
   } else if(prefix=='bf'){
     h+='<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Genel Fiyat</th><th>Özel Fiyat</th><th>Para</th><th>Durum</th><th>% Fark</th></tr>';
@@ -812,9 +812,7 @@ function satirSec(prefix, i) {
   var fuEl=document.getElementById(prefix+'FU');
   if(fuEl) fuEl.value=r.urun||'';
   if(prefix=='gf'){
-    if(document.getElementById('gPara')) document.getElementById('gPara').value=r.para||'';
     if(document.getElementById('gFB')) document.getElementById('gFB').value=r.fiyatBayi!==undefined?r.fiyatBayi:'';
-    if(document.getElementById('gFM')) document.getElementById('gFM').value=r.fiyatMusteri!==undefined?r.fiyatMusteri:'';
   } else if(prefix=='bf'){
     if(document.getElementById('bPara')) document.getElementById('bPara').value=r.para||'';
     if(document.getElementById('bFiyat')) document.getElementById('bFiyat').value=r.fiyat!==undefined?r.fiyat:'';
@@ -853,18 +851,18 @@ function adminFiyatPaneli(pOps, onceBayiId) {
 
 function genelKaydet() {
   var m=document.getElementById('gMsg');
-  var para=document.getElementById('gPara').value;
-  if(!para){ mesajGoster(m,'Para birimi seçin',false); return; }
-  var fbV=document.getElementById('gFB').value, fmV=document.getElementById('gFM').value;
-  if(fbV===''&&fmV===''){ mesajGoster(m,'En az bir fiyat girin',false); return; }
+  var fbV=document.getElementById('gFB').value;
+  if(fbV===''){ mesajGoster(m,'Fiyat girin',false); return; }
   var d={marka:getVal('gfFM'), kategori:getVal('gfFK'), urun:getVal('gfFU'),
-    para:para, mod:document.getElementById('gMod').value,
-    aktar:document.getElementById('gAktar').checked};
-  if(fbV!=='') d.fiyatBayi=parseFloat(fbV);
-  if(fmV!=='') d.fiyatMusteri=parseFloat(fmV);
+    para:'Tokken', mod:document.getElementById('gMod').value,
+    fiyatBayi:parseFloat(fbV)};
   google.script.run.withSuccessHandler(function(s){
     var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili);
-    if(r.basarili){ google.script.run.withSuccessHandler(function(s2){_gFiyatData=JSON.parse(s2);filtreVeriDoldur('gf',_gFiyatData,'para');tabloRender('gf');}).getUrunFiyatlari(); }
+    if(r.basarili){ google.script.run.withSuccessHandler(function(s2){
+      var liste=JSON.parse(s2);
+      _gFiyatData=liste.map(function(x){return{urun:x.ad,marka:x.marka,kategori:x.kategori,fiyatBayi:x.genel_fiyat_bayi,para:x.genel_para};});
+      filtreVeriDoldur('gf',_gFiyatData,'para');tabloRender('gf');
+    }).getUrunListesi(); }
   }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).genelFiyatKaydet(JSON.stringify(d));
 }
 
@@ -1321,16 +1319,16 @@ function urunleriGoster() {
         if(gf) gf.innerHTML =
           filterBar('gf') +
           '<div class="form-row">' +
-            '<div class="form-group"><label>Para Birimi *</label><select id="gPara">'+pOps+'</select></div>' +
+            '<div class="form-group" style="flex:0 0 auto"><label>Para Birimi</label>' +
+            '<div style="padding:7px 10px;background:#f8f9fa;border:1px solid #dadce0;border-radius:6px;font-size:13px;font-weight:600;color:#1a1a2e">🔑 Tokken</div></div>' +
             '<div class="form-group"><label>Mod</label><select id="gMod"><option value="birim">Birim Fiyat</option><option value="yuzde">Yüzde (%)</option></select></div>' +
             '<div class="form-group"><label>Fiyat Bayi</label><input type="number" id="gFB" step="0.01" placeholder="—"></div>' +
-            '<div class="form-group"><label>Fiyat Müşteri</label><input type="number" id="gFM" step="0.01" placeholder="—"></div>' +
           '</div>' +
           '<button class="btn btn-success btn-sm" onclick="genelKaydet()">💾 Kaydet</button>' +
           '<div id="gMsg" class="msg"></div>' +
           '<hr class="separator">' +
           '<div id="gTablo"><p style="color:#5f6368;font-size:12px">⏳ Yükleniyor...</p></div>';
-        _gFiyatData = liste.map(function(x){ return { urun:x.ad, marka:x.marka, kategori:x.kategori, fiyatBayi:x.genel_fiyat_bayi, fiyatMusteri:x.genel_fiyat_musteri, para:x.genel_para }; });
+        _gFiyatData = liste.map(function(x){ return { urun:x.ad, marka:x.marka, kategori:x.kategori, fiyatBayi:x.genel_fiyat_bayi, para:x.genel_para }; });
         filtreVeriDoldur('gf', _gFiyatData, 'para');
         tabloRender('gf');
       }).getParaListesi();
@@ -1373,11 +1371,11 @@ function urunTabloRender(data) {
   if(!rows.length){ tablo.innerHTML='<p style="color:#5f6368;font-size:12px;padding:8px">Eşleşen kayıt yok.</p>'; return; }
   var h = '<div class="tablo-ici"><table>';
   if(rol === 'Admin') {
-    h += '<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Birim</th><th>Ambalaj</th><th>F.Bayi</th><th>F.Müşteri</th><th>Para</th><th></th></tr>';
+    h += '<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Birim</th><th>Ambalaj</th><th>F.Bayi</th><th>Para</th><th></th></tr>';
     rows.forEach(function(x) {
       h += '<tr><td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.ad+'</strong>'+(x.aktif_madde?'<br><span style="font-size:10px;color:#5f6368">'+x.aktif_madde+'</span>':'')+'</td>';
       h += '<td>'+(x.birim||'—')+'</td><td>'+(x.ambalaj||'—')+'</td>';
-      h += '<td>'+(x.genel_fiyat_bayi||'—')+'</td><td>'+(x.genel_fiyat_musteri||'—')+'</td><td>'+(x.genel_para||'—')+'</td>';
+      h += '<td>'+(x.genel_fiyat_bayi||'—')+'</td><td>'+(x.genel_para||'—')+'</td>';
       h += '<td><button class="btn btn-primary btn-sm" onclick="urunDuzAc('+JSON.stringify(x).replace(/"/g,"&quot;")+')">✏️</button></td></tr>';
     });
   } else {
