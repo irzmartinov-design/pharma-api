@@ -414,6 +414,20 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
       d.musteriId = d.musteriId || o.id;
       return _api('paraBirimiDegistir', d).then(function(r) { return JSON.stringify(r); });
     },
+    bayiFiyatSifirlaFB: function(data) {
+      var o = _oturumStore.get() || {};
+      var d = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      d.tablo = 'FB';
+      d.bayiId = d.bayiId || o.id;
+      return _api('bayiFiyatSifirla', d).then(function(r) { return JSON.stringify(r); });
+    },
+    bayiFiyatSifirlaFM: function(data) {
+      var o = _oturumStore.get() || {};
+      var d = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      d.tablo = 'FM';
+      d.musteriId = d.musteriId || o.id;
+      return _api('bayiFiyatSifirla', d).then(function(r) { return JSON.stringify(r); });
+    },
     getUrunListesi: function() {
       var o = _oturumStore.get() || {};
       return _api('getUrunListesi', { kullaniciId: o.id, rol: o.rol }).then(function(r) {
@@ -451,6 +465,8 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
     fiyatMusteriKaydet: 'fiyatMusteriKaydet',
     paraBirimiDegistirFB: 'paraBirimiDegistir',
     paraBirimiDegistirFM: 'paraBirimiDegistir',
+    bayiFiyatSifirlaFB: 'bayiFiyatSifirla',
+    bayiFiyatSifirlaFM: 'bayiFiyatSifirla',
     siparisGonder: 'siparisVer',
     getBayiler: 'getBayiler',
     getMusteriler: 'getMusteriler',
@@ -835,6 +851,7 @@ function adminFiyatPaneli(pOps, onceBayiId) {
     '</div>' +
     '<button class="btn btn-success btn-sm" onclick="bayiOzelKaydet()">💾 Kaydet</button>' +
     '<button class="btn btn-outline btn-sm" onclick="bayiParaDegistir()" style="margin-left:6px">💱 Para Birimi</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="bayiFiyatSifirlaFB()" style="margin-left:6px;color:#d93025">🔄 Genel\'e Al</button>' +
     '<div id="bMsg" class="msg"></div>' +
     '<hr class="separator">' +
     '<div id="bTablo"><p style="color:#5f6368;font-size:12px">Bayi seçince fiyatlar görünür.</p></div>');
@@ -923,6 +940,7 @@ function bayiFiyatPaneli(pOps, onceMusteriId) {
     '</div>' +
     '<button class="btn btn-success btn-sm" onclick="musteriOzelKaydet()">💾 Kaydet</button>' +
     '<button class="btn btn-outline btn-sm" onclick="musteriOzelParaDegistir()" style="margin-left:6px">💱 Para Birimi</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="musteriOzelSifirla()" style="margin-left:6px;color:#d93025">🔄 Genel\'e Al</button>' +
     '<div id="moMsg" class="msg"></div>' +
     '<hr class="separator">' +
     '<div id="moTablo"><p style="color:#5f6368;font-size:12px">Müşteri seçince fiyatlar görünür.</p></div>' +
@@ -1017,6 +1035,24 @@ function musteriOzelParaDegistir() {
   google.script.run.withSuccessHandler(function(s){
     var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili); if(r.basarili) moTabloYukle();
   }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).paraBirimiDegistirFM(JSON.stringify(d));
+}
+
+function bayiFiyatSifirlaFB() {
+  var m=document.getElementById('bMsg'), bid=document.getElementById('bBayi').value;
+  if(!bid){ mesajGoster(m,'Bayi seçin',false); return; }
+  var d={bayiId:bid, marka:getVal('bfFM'), kategori:getVal('bfFK'), urun:getVal('bfFU')};
+  google.script.run.withSuccessHandler(function(s){
+    var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili); if(r.basarili) bTabloYukle();
+  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).bayiFiyatSifirlaFB(JSON.stringify(d));
+}
+
+function musteriOzelSifirla() {
+  var m=document.getElementById('moMsg'), mid=document.getElementById('moMusteri').value;
+  if(!mid){ mesajGoster(m,'Müşteri seçin',false); return; }
+  var d={musteriId:mid, marka:getVal('mofFM'), kategori:getVal('mofFK'), urun:getVal('mofFU')};
+  google.script.run.withSuccessHandler(function(s){
+    var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili); if(r.basarili) moTabloYukle();
+  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).bayiFiyatSifirlaFM(JSON.stringify(d));
 }
 
 // ── ADRESLER ──────────────────────────────────────────────────────────
