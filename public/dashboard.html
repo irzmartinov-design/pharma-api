@@ -796,9 +796,7 @@ function tabloRender(prefix) {
       var durum     = x.genel_mi ? 'Genel' : 'Özel';
       var farkStr   = x.genel_mi
         ? '0.0%'
-        : (x.genelPara && x.para && x.genelPara !== x.para
-            ? '<span style="color:#f9ab00;font-size:10px">≠ Para</span>'
-            : (x.karYuzde||0).toFixed(1)+'%');
+        : ((x.karYuzde||0).toFixed(1)+'%'+(x.genelPara&&x.para&&x.genelPara!==x.para?' <span style="color:#f9ab00;font-size:9px">≠</span>':''));
       h+='<tr style="cursor:pointer" onclick="satirSec(\'bf\','+i+')" title="Formu doldur">';
       h+='<td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.urun+'</strong></td>';
       var gfLabel = x.has_bf && x.para !== x.genelPara
