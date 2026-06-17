@@ -268,9 +268,10 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
       return _api('getUrunListesi', { kullaniciId: o.id, rol: o.rol }).then(function(r) {
         return JSON.stringify((r.liste || []).map(function(x) {
           return {
-            urun: x.ad, marka: x.marka, kategori: x.kategori,
-            fiyatBayi: x.fiyat_admin, fiyatMusteri: x.fiyat_bayi,
-            para: x.para_admin || x.para_bayi || ''
+            urunId: x.id, urun: x.ad, marka: x.marka, kategori: x.kategori,
+            fiyatBayi: parseFloat(x.genel_fiyat_bayi) || null,
+            fiyatMusteri: parseFloat(x.genel_fiyat_musteri) || null,
+            para: x.genel_para || ''
           };
         }));
       });
