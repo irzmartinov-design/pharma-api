@@ -289,6 +289,7 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
           return {
             urun: x.urun_adi, marka: x.marka, kategori: x.kategori,
             birim: x.birim, ambalaj: x.ambalaj,
+            urun_id: x.urun_id,
             genelFiyat: x.genel_fiyat_cevrilmis ?? x.genel_fiyat,
             genelFiyatTK: x.genel_fiyat,
             genelPara: x.genel_para,
@@ -840,6 +841,7 @@ function satirSec(prefix, i) {
   if(prefix=='gf'){
     if(document.getElementById('gFB')) document.getElementById('gFB').value=r.fiyatBayi!==undefined?r.fiyatBayi:'';
   } else if(prefix=='bf'){
+    if(document.getElementById('bUrunId')) document.getElementById('bUrunId').value=r.urun_id||'';
     if(document.getElementById('bPara')) document.getElementById('bPara').value=r.para||'';
     if(document.getElementById('bFiyat')) document.getElementById('bFiyat').value=r.fiyat!==undefined?r.fiyat:'';
   } else if(prefix=='bgf'){
@@ -857,6 +859,7 @@ function adminFiyatPaneli(pOps, onceBayiId) {
   ic('<h3>💰 Bayi Fiyatları</h3>' +
     '<div class="form-group"><label>Bayi *</label><select id="bBayi" onchange="bTabloYukle()">'+by+'</select></div>' +
     filterBar('bf') +
+    '<input type="hidden" id="bUrunId">' +
     '<div class="form-row">' +
       '<div class="form-group"><label>Para Birimi *</label><select id="bPara">'+pOps+'</select></div>' +
       '<div class="form-group"><label>Mod</label><select id="bMod"><option value="birim">Birim</option><option value="yuzde">%</option></select></div>' +
@@ -908,16 +911,17 @@ function bTabloYukle() {
 function bayiOzelKaydet() {
   var m=document.getElementById('bMsg'), bid=document.getElementById('bBayi').value;
   if(!bid){ mesajGoster(m,'Bayi seçin',false); return; }
+  var urunId=document.getElementById('bUrunId').value;
+  if(!urunId){ mesajGoster(m,'Tabloda bir ürün seçin',false); return; }
   var para=document.getElementById('bPara').value;
   if(!para){ mesajGoster(m,'Para birimi seçin',false); return; }
   var fV=document.getElementById('bFiyat').value;
   if(fV===''){ mesajGoster(m,'Fiyat girin',false); return; }
   var mod=document.getElementById('bMod').value;
-  var d={bayiId:bid, marka:getVal('bfFM'), kategori:getVal('bfFK'), urun:getVal('bfFU'),
-    para:para, mod:mod, fiyat:parseFloat(fV), yuzde:parseFloat(fV)};
+  var d={bayiId:bid, urunId:urunId, para:para, mod:mod, fiyat:parseFloat(fV), yuzde:parseFloat(fV)};
   google.script.run.withSuccessHandler(function(s){
     var r=JSON.parse(s); mesajGoster(m,r.mesaj||r.hata,r.basarili); if(r.basarili) bTabloYukle();
-  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).bayiGenelFiyatGuncelle(JSON.stringify(d));
+  }).withFailureHandler(function(){ mesajGoster(m,'Bağlantı hatası',false); }).fiyatBayiKaydet(JSON.stringify(d));
 }
 
 // ── BAYİ FİYAT PANELİ ────────────────────────────────────────────────
