@@ -48,7 +48,7 @@ export default async function handler(req) {
       if (!urunler.length) return allowCors(ok({ mesaj: '0 ürün güncellendi', basarili: true }));
 
       // Fiyatları hesapla
-      const urunIds = urunler.map(u => parseInt(u.urun_id));
+      const urunIds = urunler.map(u => String(u.urun_id));
       const fiyatArr = urunler.map(u => {
         const eskiKur = getKur(u.para);
         const f = parseFloat(u.fiyat) || 0;
@@ -59,7 +59,7 @@ export default async function handler(req) {
       // Tek sorguda batch UPSERT (N+1 yok, timeout riski yok)
       await sql`
         INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
-        SELECT ${bayiId}::int, unnest(${urunIds}::int[]), unnest(${fiyatArr}::numeric[]),
+        SELECT ${bayiId}::int, unnest(${urunIds}::text[]), unnest(${fiyatArr}::numeric[]),
                ${yeniPara}, unnest(${karArr}::numeric[]), NOW()
         ON CONFLICT (bayi_id, urun_id)
         DO UPDATE SET fiyat = EXCLUDED.fiyat, para = EXCLUDED.para, guncelleme = NOW()`;
@@ -101,7 +101,7 @@ export default async function handler(req) {
 
       if (!urunler.length) return allowCors(ok({ mesaj: '0 ürün güncellendi', basarili: true }));
 
-      const urunIds = urunler.map(u => parseInt(u.urun_id));
+      const urunIds = urunler.map(u => String(u.urun_id));
       const fiyatArr = urunler.map(u => {
         const eskiKur = getKur(u.para);
         const f = parseFloat(u.fiyat) || 0;
@@ -112,7 +112,7 @@ export default async function handler(req) {
 
       await sql`
         INSERT INTO musteri_fiyatlari (musteri_id, bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
-        SELECT ${musteriId}::int, unnest(${bayiArr}::int[]), unnest(${urunIds}::int[]),
+        SELECT ${musteriId}::int, unnest(${bayiArr}::int[]), unnest(${urunIds}::text[]),
                unnest(${fiyatArr}::numeric[]), ${yeniPara}, unnest(${karArr}::numeric[]), NOW()
         ON CONFLICT (musteri_id, urun_id)
         DO UPDATE SET fiyat = EXCLUDED.fiyat, para = EXCLUDED.para, guncelleme = NOW()`;
