@@ -292,6 +292,8 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
             genelFiyat: x.genel_fiyat, genelPara: x.genel_para,
             fiyat: x.fiyat, para: x.para,
             karYuzde: parseFloat(x.kar_yuzde) || 0,
+            genel_mi: !!x.genel_mi,
+            has_bf: !!x.has_bf,
             durum: x.genel_mi ? 'Genel' : 'Özel'
           };
         }));
