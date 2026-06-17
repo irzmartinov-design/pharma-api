@@ -24,8 +24,8 @@ export default async function handler(req) {
     for (const u of urunler) {
       const genelFiyat = parseFloat(u.fiyat_bayi) || 0;
       let yeniFiyat;
-      if (mod === '%') {
-        yeniFiyat = genelFiyat * (1 + parseFloat(yuzde) / 100);
+      if (mod === '%' || mod === 'yuzde') {
+        yeniFiyat = genelFiyat * (1 + parseFloat(yuzde || fiyat) / 100);
       } else {
         yeniFiyat = parseFloat(fiyat);
       }
