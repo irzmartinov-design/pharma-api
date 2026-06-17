@@ -59,7 +59,7 @@ export default async function handler(req) {
       // Tek sorguda batch UPSERT (N+1 yok, timeout riski yok)
       await sql`
         INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
-        SELECT ${bayiId}::int, unnest(${urunIds}::text[]), unnest(${fiyatArr}::numeric[]),
+        SELECT ${bayiId}, unnest(${urunIds}::text[]), unnest(${fiyatArr}::numeric[]),
                ${yeniPara}, unnest(${karArr}::numeric[]), NOW()
         ON CONFLICT (bayi_id, urun_id)
         DO UPDATE SET fiyat = EXCLUDED.fiyat, para = EXCLUDED.para, guncelleme = NOW()`;
@@ -112,7 +112,7 @@ export default async function handler(req) {
 
       await sql`
         INSERT INTO musteri_fiyatlari (musteri_id, bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
-        SELECT ${musteriId}::int, unnest(${bayiArr}::int[]), unnest(${urunIds}::text[]),
+        SELECT ${musteriId}, unnest(${bayiArr}::text[]), unnest(${urunIds}::text[]),
                unnest(${fiyatArr}::numeric[]), ${yeniPara}, unnest(${karArr}::numeric[]), NOW()
         ON CONFLICT (musteri_id, urun_id)
         DO UPDATE SET fiyat = EXCLUDED.fiyat, para = EXCLUDED.para, guncelleme = NOW()`;
