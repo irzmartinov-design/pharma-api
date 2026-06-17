@@ -51,20 +51,25 @@ export default async function handler(req) {
     }
 
     // Normalize: özel fiyat yoksa genel fiyatı kullan
-    const fiyatlar = rows.map(r => ({
-      urun_id:     r.urun_id,
-      urun_adi:    r.urun_adi,
-      marka:       r.marka,
-      kategori:    r.kategori,
-      birim:       r.birim,
-      ambalaj:     r.ambalaj,
-      genel_fiyat: parseFloat(r.genel_fiyat) || 0,
-      genel_para:  r.genel_para || 'TL',
-      fiyat:       parseFloat(r.fiyat ?? r.genel_fiyat) || 0,
-      para:        r.para || r.genel_para || 'TL',
-      kar_yuzde:   parseFloat(r.kar_yuzde) || 0,
-      genel_mi:    r.genel_mi,
-    }));
+    const fiyatlar = rows.map(r => {
+      const karYuzde = parseFloat(r.kar_yuzde) || 0;
+      // kar_yuzde = 0 VE kayıt var → markup yok → genel fiyatla eşdeğer → Genel göster
+      const genel_mi = r.genel_mi || (r.id !== null && karYuzde === 0);
+      return {
+        urun_id:     r.urun_id,
+        urun_adi:    r.urun_adi,
+        marka:       r.marka,
+        kategori:    r.kategori,
+        birim:       r.birim,
+        ambalaj:     r.ambalaj,
+        genel_fiyat: parseFloat(r.genel_fiyat) || 0,
+        genel_para:  r.genel_para || 'TL',
+        fiyat:       parseFloat(r.fiyat ?? r.genel_fiyat) || 0,
+        para:        r.para || r.genel_para || 'TL',
+        kar_yuzde:   karYuzde,
+        genel_mi,
+      };
+    });
 
     return allowCors(ok({ fiyatlar }));
   } catch (e) { return allowCors(err(e.message, 500)); }

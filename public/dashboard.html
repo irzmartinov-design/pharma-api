@@ -775,12 +775,14 @@ function tabloRender(prefix) {
     h+='<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Genel Fiyat</th><th>Özel Fiyat</th><th>Para</th><th>Durum</th><th>% Fark</th></tr>';
     rows.forEach(function(x){
       var i=data.indexOf(x);
+      var farklıPara = x.genelPara && x.para && x.genelPara !== x.para;
+      var farkStr = farklıPara ? '<span style="color:#f9ab00;font-size:10px">≠ Para</span>' : (x.karYuzde||0).toFixed(1)+'%';
       h+='<tr style="cursor:pointer" onclick="satirSec(\'bf\','+i+')" title="Formu doldur">';
       h+='<td>'+x.marka+'</td><td>'+x.kategori+'</td><td><strong>'+x.urun+'</strong></td>';
       h+='<td>'+(x.genelFiyat||'—')+' <span style="color:#5f6368;font-size:10px">'+(x.genelPara||'')+'</span></td>';
       h+='<td>'+(x.durum=='Özel'?x.fiyat:'—')+'</td><td>'+(x.para||'—')+'</td>';
       h+='<td><span style="color:'+(x.durum=='Özel'?'#d93025':'#188038')+';font-weight:600">'+x.durum+'</span></td>';
-      h+='<td>'+(x.karYuzde||0).toFixed(1)+'%</td></tr>';
+      h+='<td>'+farkStr+'</td></tr>';
     });
   } else if(prefix=='bgf'){
     h+='<tr><th>Marka</th><th>Kategori</th><th>Ürün</th><th>Müşteri Genel</th><th>Para</th><th>Bayi%kar</th></tr>';

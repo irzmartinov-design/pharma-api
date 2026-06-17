@@ -7,69 +7,64 @@ export default async function handler(req) {
     if (!yeniPara) return allowCors(err('Yeni para birimi zorunlu'));
     const sql = getDb();
 
-    // Tüm kur değerlerini tek sorguda al
+    // Kur değerlerini tek sorguda al
     const kurRows = await sql`SELECT anahtar, deger FROM ayarlar WHERE anahtar LIKE 'kur_%'`;
     const kurMap = {};
-    kurRows.forEach(function(r) { kurMap[r.anahtar.replace('kur_', '')] = parseFloat(r.deger); });
-    function getKurVal(para) { return kurMap[para] || 1; }
-    const yeniKur = getKurVal(yeniPara);
-
-    let guncellenen = 0;
+    kurRows.forEach(r => { kurMap[r.anahtar.replace('kur_', '')] = parseFloat(r.deger); });
+    const getKur = (para) => kurMap[para] || 1;
+    const yeniKur = getKur(yeniPara);
 
     if (tablo === 'FB') {
       if (!bayiId) return allowCors(err('Bayi ID zorunlu'));
 
-      // Tüm uygun ürünleri urunler + mevcut bayi_fiyatlari ile al (kayıtsız olanlar da dahil)
+      // Tüm uygun ürünleri COALESCE ile al (kaydı olmayanlar da dahil)
       let urunler;
       if (marka && kategori && urun) {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
-                 COALESCE(bf.para, u.para) AS para,
-                 COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
+          SELECT u.id AS urun_id, COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
+                 COALESCE(bf.para, u.para) AS para, COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
           WHERE u.aktif = TRUE AND u.marka = ${marka} AND u.kategori = ${kategori} AND u.ad = ${urun}`;
       } else if (marka && kategori) {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
-                 COALESCE(bf.para, u.para) AS para,
-                 COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
+          SELECT u.id AS urun_id, COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
+                 COALESCE(bf.para, u.para) AS para, COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
           WHERE u.aktif = TRUE AND u.marka = ${marka} AND u.kategori = ${kategori}`;
       } else if (marka) {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
-                 COALESCE(bf.para, u.para) AS para,
-                 COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
+          SELECT u.id AS urun_id, COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
+                 COALESCE(bf.para, u.para) AS para, COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
           WHERE u.aktif = TRUE AND u.marka = ${marka}`;
       } else {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
-                 COALESCE(bf.para, u.para) AS para,
-                 COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
+          SELECT u.id AS urun_id, COALESCE(bf.fiyat, u.fiyat_bayi) AS fiyat,
+                 COALESCE(bf.para, u.para) AS para, COALESCE(bf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN bayi_fiyatlari bf ON bf.urun_id = u.id AND bf.bayi_id = ${bayiId}
           WHERE u.aktif = TRUE`;
       }
 
-      for (const u of urunler) {
-        const eskiKur = getKurVal(u.para);
-        const fiyat = parseFloat(u.fiyat) || 0;
-        const yeniFiyat = eskiKur > 0 && yeniKur > 0 ? fiyat * yeniKur / eskiKur : fiyat;
-        await sql`
-          INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
-          VALUES (${bayiId}, ${u.urun_id}, ${yeniFiyat}, ${yeniPara}, ${u.kar_yuzde}, NOW())
-          ON CONFLICT (bayi_id, urun_id)
-          DO UPDATE SET fiyat = ${yeniFiyat}, para = ${yeniPara}, guncelleme = NOW()`;
-        guncellenen++;
-      }
+      if (!urunler.length) return allowCors(ok({ mesaj: '0 ürün güncellendi', basarili: true }));
+
+      // Fiyatları hesapla
+      const urunIds = urunler.map(u => parseInt(u.urun_id));
+      const fiyatArr = urunler.map(u => {
+        const eskiKur = getKur(u.para);
+        const f = parseFloat(u.fiyat) || 0;
+        return (eskiKur > 0 && yeniKur > 0) ? f * yeniKur / eskiKur : f;
+      });
+      const karArr = urunler.map(u => parseFloat(u.kar_yuzde) || 0);
+
+      // Tek sorguda batch UPSERT (N+1 yok, timeout riski yok)
+      await sql`
+        INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
+        SELECT ${bayiId}::int, unnest(${urunIds}::int[]), unnest(${fiyatArr}::numeric[]),
+               ${yeniPara}, unnest(${karArr}::numeric[]), NOW()
+        ON CONFLICT (bayi_id, urun_id)
+        DO UPDATE SET fiyat = EXCLUDED.fiyat, para = EXCLUDED.para, guncelleme = NOW()`;
+
+      return allowCors(ok({ mesaj: `${urunler.length} ürün ${yeniPara} para birimine çevrildi`, basarili: true }));
     } else {
       // FM — müşteri fiyatları
       if (!musteriId) return allowCors(err('Müşteri ID zorunlu'));
@@ -80,56 +75,50 @@ export default async function handler(req) {
       let urunler;
       if (marka && kategori && urun) {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
-                 COALESCE(mf.para, u.para) AS para,
-                 COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
+          SELECT u.id AS urun_id, COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
+                 COALESCE(mf.para, u.para) AS para, COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
           WHERE u.aktif = TRUE AND u.marka = ${marka} AND u.kategori = ${kategori} AND u.ad = ${urun}`;
       } else if (marka && kategori) {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
-                 COALESCE(mf.para, u.para) AS para,
-                 COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
+          SELECT u.id AS urun_id, COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
+                 COALESCE(mf.para, u.para) AS para, COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
           WHERE u.aktif = TRUE AND u.marka = ${marka} AND u.kategori = ${kategori}`;
       } else if (marka) {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
-                 COALESCE(mf.para, u.para) AS para,
-                 COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
+          SELECT u.id AS urun_id, COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
+                 COALESCE(mf.para, u.para) AS para, COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
           WHERE u.aktif = TRUE AND u.marka = ${marka}`;
       } else {
         urunler = await sql`
-          SELECT u.id AS urun_id,
-                 COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
-                 COALESCE(mf.para, u.para) AS para,
-                 COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
-          FROM urunler u
-          LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
+          SELECT u.id AS urun_id, COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
+                 COALESCE(mf.para, u.para) AS para, COALESCE(mf.kar_yuzde, 0) AS kar_yuzde
+          FROM urunler u LEFT JOIN musteri_fiyatlari mf ON mf.urun_id = u.id AND mf.musteri_id = ${musteriId}
           WHERE u.aktif = TRUE`;
       }
 
-      for (const u of urunler) {
-        const eskiKur = getKurVal(u.para);
-        const fiyat = parseFloat(u.fiyat) || 0;
-        const yeniFiyat = eskiKur > 0 && yeniKur > 0 ? fiyat * yeniKur / eskiKur : fiyat;
-        await sql`
-          INSERT INTO musteri_fiyatlari (musteri_id, bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
-          VALUES (${musteriId}, ${mBayiId}, ${u.urun_id}, ${yeniFiyat}, ${yeniPara}, ${u.kar_yuzde}, NOW())
-          ON CONFLICT (musteri_id, urun_id)
-          DO UPDATE SET fiyat = ${yeniFiyat}, para = ${yeniPara}, guncelleme = NOW()`;
-        guncellenen++;
-      }
-    }
+      if (!urunler.length) return allowCors(ok({ mesaj: '0 ürün güncellendi', basarili: true }));
 
-    return allowCors(ok({ mesaj: `${guncellenen} ürün ${yeniPara} para birimine çevrildi`, basarili: true }));
+      const urunIds = urunler.map(u => parseInt(u.urun_id));
+      const fiyatArr = urunler.map(u => {
+        const eskiKur = getKur(u.para);
+        const f = parseFloat(u.fiyat) || 0;
+        return (eskiKur > 0 && yeniKur > 0) ? f * yeniKur / eskiKur : f;
+      });
+      const karArr = urunler.map(u => parseFloat(u.kar_yuzde) || 0);
+      const bayiArr = urunler.map(() => mBayiId);
+
+      await sql`
+        INSERT INTO musteri_fiyatlari (musteri_id, bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
+        SELECT ${musteriId}::int, unnest(${bayiArr}::int[]), unnest(${urunIds}::int[]),
+               unnest(${fiyatArr}::numeric[]), ${yeniPara}, unnest(${karArr}::numeric[]), NOW()
+        ON CONFLICT (musteri_id, urun_id)
+        DO UPDATE SET fiyat = EXCLUDED.fiyat, para = EXCLUDED.para, guncelleme = NOW()`;
+
+      return allowCors(ok({ mesaj: `${urunler.length} ürün ${yeniPara} para birimine çevrildi`, basarili: true }));
+    }
   } catch (e) { return allowCors(err(e.message, 500)); }
 }
 export const config = { runtime: 'edge' };
