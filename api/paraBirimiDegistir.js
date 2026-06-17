@@ -8,56 +8,67 @@ async function getKur(sql, para) {
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
   try {
-    const { tablo, bayiId, musteriId, yeniPara, marka, kategori, urun, rol } = await req.json();
+    const { tablo, bayiId, musteriId, yeniPara, marka, kategori, urun } = await req.json();
     const sql = getDb();
     const yeniKur = await getKur(sql, yeniPara);
     let guncellenen = 0;
 
     if (tablo === 'FB') {
+      // Bayi fiyatlarının para birimi değiştir
       let rows;
       if (marka && kategori && urun) {
-        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka} AND kategori=${kategori} AND urun_adi=${urun}`;
+        rows = await sql`
+          SELECT bf.id, bf.fiyat, bf.para FROM bayi_fiyatlari bf
+          JOIN urunler u ON u.id = bf.urun_id
+          WHERE bf.bayi_id=${bayiId} AND u.marka=${marka} AND u.kategori=${kategori} AND u.ad=${urun}`;
       } else if (marka && kategori) {
-        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka} AND kategori=${kategori}`;
+        rows = await sql`
+          SELECT bf.id, bf.fiyat, bf.para FROM bayi_fiyatlari bf
+          JOIN urunler u ON u.id = bf.urun_id
+          WHERE bf.bayi_id=${bayiId} AND u.marka=${marka} AND u.kategori=${kategori}`;
       } else if (marka) {
-        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId} AND marka=${marka}`;
+        rows = await sql`
+          SELECT bf.id, bf.fiyat, bf.para FROM bayi_fiyatlari bf
+          JOIN urunler u ON u.id = bf.urun_id
+          WHERE bf.bayi_id=${bayiId} AND u.marka=${marka}`;
       } else {
-        rows = await sql`SELECT * FROM fiyat_bayi WHERE bayi_id=${bayiId}`;
+        rows = await sql`SELECT id, fiyat, para FROM bayi_fiyatlari WHERE bayi_id=${bayiId}`;
       }
-
-      for (const row of rows) {
-        if (rol === 'Admin') {
-          const eskiKurAdmin = await getKur(sql, row.para_admin);
-          const yeniFiyatAdmin = parseFloat(row.fiyat_admin) * yeniKur / eskiKurAdmin;
-          const eskiKurBayi = await getKur(sql, row.para_bayi);
-          const yeniFiyatBayi = parseFloat(row.fiyat_bayi) * yeniKur / eskiKurBayi;
-          await sql`UPDATE fiyat_bayi SET fiyat_admin=${yeniFiyatAdmin}, para_admin=${yeniPara}, fiyat_bayi=${yeniFiyatBayi}, para_bayi=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
-        } else {
-          const eskiKur = await getKur(sql, row.para_bayi);
-          const yeniFiyat = parseFloat(row.fiyat_bayi) * yeniKur / eskiKur;
-          await sql`UPDATE fiyat_bayi SET fiyat_bayi=${yeniFiyat}, para_bayi=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
-        }
-        guncellenen++;
-      }
-    } else {
-      let rows;
-      if (marka && kategori && urun) {
-        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId} AND marka=${marka} AND kategori=${kategori} AND urun_adi=${urun}`;
-      } else if (marka && kategori) {
-        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId} AND marka=${marka} AND kategori=${kategori}`;
-      } else if (marka) {
-        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId} AND marka=${marka}`;
-      } else {
-        rows = await sql`SELECT * FROM fiyat_musteri WHERE musteri_id=${musteriId}`;
-      }
-
       for (const row of rows) {
         const eskiKur = await getKur(sql, row.para);
         const yeniFiyat = parseFloat(row.fiyat) * yeniKur / eskiKur;
-        await sql`UPDATE fiyat_musteri SET fiyat=${yeniFiyat}, para=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
+        await sql`UPDATE bayi_fiyatlari SET fiyat=${yeniFiyat}, para=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
+        guncellenen++;
+      }
+    } else {
+      // Müşteri fiyatlarının para birimi değiştir
+      let rows;
+      if (marka && kategori && urun) {
+        rows = await sql`
+          SELECT mf.id, mf.fiyat, mf.para FROM musteri_fiyatlari mf
+          JOIN urunler u ON u.id = mf.urun_id
+          WHERE mf.musteri_id=${musteriId} AND u.marka=${marka} AND u.kategori=${kategori} AND u.ad=${urun}`;
+      } else if (marka && kategori) {
+        rows = await sql`
+          SELECT mf.id, mf.fiyat, mf.para FROM musteri_fiyatlari mf
+          JOIN urunler u ON u.id = mf.urun_id
+          WHERE mf.musteri_id=${musteriId} AND u.marka=${marka} AND u.kategori=${kategori}`;
+      } else if (marka) {
+        rows = await sql`
+          SELECT mf.id, mf.fiyat, mf.para FROM musteri_fiyatlari mf
+          JOIN urunler u ON u.id = mf.urun_id
+          WHERE mf.musteri_id=${musteriId} AND u.marka=${marka}`;
+      } else {
+        rows = await sql`SELECT id, fiyat, para FROM musteri_fiyatlari WHERE musteri_id=${musteriId}`;
+      }
+      for (const row of rows) {
+        const eskiKur = await getKur(sql, row.para);
+        const yeniFiyat = parseFloat(row.fiyat) * yeniKur / eskiKur;
+        await sql`UPDATE musteri_fiyatlari SET fiyat=${yeniFiyat}, para=${yeniPara}, guncelleme=NOW() WHERE id=${row.id}`;
         guncellenen++;
       }
     }
+
     return allowCors(ok({ mesaj: `${guncellenen} satır ${yeniPara} para birimine çevrildi`, basarili: true }));
   } catch (e) { return allowCors(err(e.message, 500)); }
 }
