@@ -337,6 +337,23 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
     sayfalariGoster: function() { return Promise.resolve(JSON.stringify({ basarili: true })); },
     sayfalariGizle:  function() { return Promise.resolve(JSON.stringify({ basarili: true })); },
     showSiparisForm: function() { window.location.href = 'siparis.html'; return Promise.resolve(''); },
+    getUrunListesi: function() {
+      var o = _oturumStore.get() || {};
+      return _api('getUrunListesi', { kullaniciId: o.id, rol: o.rol }).then(function(r) {
+        var liste = r.liste || [];
+        if (!_cache.urunler) {
+          _cache.urunler = liste.map(function(x) {
+            return {
+              id: x.id, ad: x.ad, marka: x.marka, kategori: x.kategori,
+              birim: x.birim||'', ambalaj: x.ambalaj||'', aktifMadde: x.aktif_madde||'',
+              tabanFiyat: parseFloat(x.genel_fiyat_bayi||x.fiyat_bayi)||0,
+              tabanPara: x.genel_para||x.para_bayi||'Tokken'
+            };
+          });
+        }
+        return JSON.stringify(liste);
+      });
+    },
     getParaListesi: function() {
       return _getParalar().then(function(p) { return JSON.stringify(p); });
     },
