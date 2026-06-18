@@ -249,7 +249,10 @@ function urunSec() {
   document.getElementById('paraBirim').textContent = paraStr;
   document.getElementById('birimFiyat').textContent = birimFiyatDeger > 0 ? birimFiyatDeger.toFixed(2) : '—';
 
-  bilgiDiv.innerHTML = '📦 ' + u.marka + ' › ' + u.kategori + (u.birim ? ' · ' + u.birim : '') + (u.ambalaj ? ' · ' + u.ambalaj : '');
+  bilgiDiv.innerHTML = '📦 ' + u.marka + ' › ' + u.kategori
+    + (u.birim ? ' · ' + u.birim : '')
+    + (u.ambalaj ? ' · ' + u.ambalaj : '')
+    + (u.aktif_madde ? '<br><span style="font-size:11px;color:#5f6368">💊 ' + u.aktif_madde + '</span>' : '');
   bilgiDiv.style.display = 'block';
 
   toplamHesapla();
