@@ -19,7 +19,7 @@ export default async function handler(req) {
         ORDER BY u.marka, u.kategori, u.ad`;
     } else if (rol === 'Bayi') {
       rows = await sql`
-        SELECT u.id, u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
+        SELECT u.id, u.ad, u.marka, u.kategori, u.aktif_madde, u.birim, u.ambalaj,
                COALESCE(bf.fiyat,  u.fiyat_bayi)  AS fiyat_bayi,
                COALESCE(bf.para,   u.para)          AS para_bayi,
                bf.kar_yuzde,

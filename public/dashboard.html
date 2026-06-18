@@ -256,7 +256,8 @@ td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
         return {
           id: x.id, ad: x.ad, marka: x.marka, kategori: x.kategori,
           birim: x.birim||'', ambalaj: x.ambalaj||'', aktifMadde: x.aktif_madde||'',
-          tabanFiyat: parseFloat(x.genel_fiyat_bayi)||0, tabanPara: x.genel_para||'Tokken'
+          tabanFiyat: parseFloat(x.genel_fiyat_bayi||x.fiyat_bayi)||0,
+          tabanPara: x.genel_para||x.para_bayi||'Tokken'
         };
       });
       return _cache.urunler;
