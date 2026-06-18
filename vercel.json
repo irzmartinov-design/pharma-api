@@ -5,6 +5,9 @@
       "maxDuration": 10
     }
   },
+  "redirects": [
+    { "source": "/", "destination": "/giris.html", "permanent": false }
+  ],
   "headers": [
     {
       "source": "/(.*\\.html)",
