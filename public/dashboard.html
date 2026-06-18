@@ -1450,14 +1450,14 @@ function urunleriGoster() {
           '<div class="form-row">' +
             '<div class="form-group" style="flex:0 0 auto"><label>Para Birimi</label>' +
             '<div style="padding:7px 10px;background:#f8f9fa;border:1px solid #dadce0;border-radius:6px;font-size:13px;font-weight:600;color:#1a1a2e">🔑 Tokken</div></div>' +
-            '<div class="form-group"><label>Mod</label><select id="gMod"><option value="birim">Birim Fiyat</option><option value="yuzde">Yüzde (%)</option></select></div>' +
+            '<div class="form-group"><label>Mod</label><select id="gMod"><option value="birim">Birim Fiyat</option><option value="%">Yüzde (%)</option></select></div>' +
             '<div class="form-group"><label>Fiyat Bayi</label><input type="number" id="gFB" step="0.01" placeholder="—"></div>' +
           '</div>' +
           '<button class="btn btn-success btn-sm" onclick="genelKaydet()">💾 Kaydet</button>' +
           '<div id="gMsg" class="msg"></div>' +
           '<hr class="separator">' +
           '<div id="gTablo"><p style="color:#5f6368;font-size:12px">⏳ Yükleniyor...</p></div>';
-        _gFiyatData = liste.map(function(x){ return { urun:x.ad, marka:x.marka, kategori:x.kategori, fiyatBayi:x.genel_fiyat_bayi, para:x.genel_para }; });
+        _gFiyatData = liste.map(function(x){ return { urun_id:x.id, urun:x.ad, marka:x.marka, kategori:x.kategori, birim:x.birim||'', ambalaj:x.ambalaj||'', aktifMadde:x.aktif_madde||'', fiyatBayi:x.genel_fiyat_bayi, para:x.genel_para }; });
         filtreVeriDoldur('gf', _gFiyatData, 'para');
         tabloRender('gf');
       }).getParaListesi();
