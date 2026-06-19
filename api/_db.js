@@ -12,6 +12,10 @@ export function err(mesaj, status = 400) {
   return Response.json({ basarili: false, hata: mesaj }, { status });
 }
 
+export function r2(x) {
+  return Math.round((parseFloat(x) || 0) * 100) / 100;
+}
+
 export function allowCors(res) {
   const headers = {
     'Access-Control-Allow-Origin': '*',

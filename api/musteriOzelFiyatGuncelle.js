@@ -1,4 +1,4 @@
-import { getDb, ok, err, allowCors } from './_db.js';
+import { getDb, ok, err, allowCors, r2 } from './_db.js';
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
@@ -7,47 +7,46 @@ export default async function handler(req) {
     if (!bayiId || !musteriId) return allowCors(err('Bayi ID ve Müşteri ID zorunlu'));
     const sql = getDb();
 
-    // Tek sorguda: ürünler + bayi özel fiyat (varsa) birleşik
-    let urunler;
-    if (marka && kategori && urun) {
-      urunler = await sql`
-        SELECT u.id, COALESCE(bf.fiyat, u.fiyat_musteri) AS baz, u.para
-        FROM urunler u
-        LEFT JOIN bayi_fiyatlari bf ON bf.urun_id=u.id AND bf.bayi_id=${bayiId}
-        WHERE u.aktif=TRUE AND u.marka=${marka} AND u.kategori=${kategori} AND u.ad=${urun}`;
-    } else if (marka && kategori) {
-      urunler = await sql`
-        SELECT u.id, COALESCE(bf.fiyat, u.fiyat_musteri) AS baz, u.para
-        FROM urunler u
-        LEFT JOIN bayi_fiyatlari bf ON bf.urun_id=u.id AND bf.bayi_id=${bayiId}
-        WHERE u.aktif=TRUE AND u.marka=${marka} AND u.kategori=${kategori}`;
-    } else if (marka) {
-      urunler = await sql`
-        SELECT u.id, COALESCE(bf.fiyat, u.fiyat_musteri) AS baz, u.para
-        FROM urunler u
-        LEFT JOIN bayi_fiyatlari bf ON bf.urun_id=u.id AND bf.bayi_id=${bayiId}
-        WHERE u.aktif=TRUE AND u.marka=${marka}`;
-    } else {
-      urunler = await sql`
-        SELECT u.id, COALESCE(bf.fiyat, u.fiyat_musteri) AS baz, u.para
-        FROM urunler u
-        LEFT JOIN bayi_fiyatlari bf ON bf.urun_id=u.id AND bf.bayi_id=${bayiId}
-        WHERE u.aktif=TRUE`;
-    }
+    const kurRows = await sql`SELECT anahtar, deger FROM ayarlar WHERE anahtar LIKE 'kur_%'`;
+    const kurMap = {};
+    kurRows.forEach(r => { kurMap[r.anahtar.replace('kur_', '')] = parseFloat(r.deger); });
+    const getKur = (p) => kurMap[p] || 1;
+
+    const m = marka || null, k = kategori || null, u = urun || null;
+
+    // Tek sorguda: ürünler + bayinin kendi genel fiyatı (varsa) birleşik
+    const urunler = await sql`
+      SELECT u.id, u.fiyat_musteri, bf.fiyat AS bf_fiyat, bf.para AS bf_para
+      FROM urunler u
+      LEFT JOIN bayi_fiyatlari bf ON bf.urun_id=u.id AND bf.bayi_id=${bayiId}
+      WHERE u.aktif=TRUE AND u.marka=COALESCE(${m},u.marka) AND u.kategori=COALESCE(${k},u.kategori) AND u.ad=COALESCE(${u},u.ad)`;
 
     if (!urunler.length) return allowCors(ok({ mesaj: '0 ürün güncellendi' }));
 
-    // JS'de hesapla, tek bulk upsert
+    const yuzdeMod = mod === '%' || mod === 'yuzde';
+    const hedefPara = para || 'TL';
     const ids = [], fiyatlar = [], paralar = [], karlar = [];
-    for (const u of urunler) {
-      const baz = parseFloat(u.baz) || 0;
-      const yeniFiyat = (mod === '%' || mod === 'yuzde')
-        ? baz * (1 + parseFloat(yuzde ?? fiyat) / 100)
-        : parseFloat(fiyat);
-      const karYuzde = baz > 0 ? ((yeniFiyat - baz) / baz * 100) : 0;
-      ids.push(u.id);
+
+    for (const urn of urunler) {
+      // Bayinin kendi genel fiyatı varsa onu Tokken'e çevir, yoksa ürünün Tokken bazlı fiyat_musteri'sini kullan
+      const bazTK = urn.bf_fiyat != null
+        ? parseFloat(urn.bf_fiyat) * getKur('Tokken') / getKur(urn.bf_para || 'Tokken')
+        : parseFloat(urn.fiyat_musteri) || 0;
+      const bazHedefPara = bazTK * getKur(hedefPara) / getKur('Tokken');
+      let yeniFiyat;
+      if (yuzdeMod) {
+        // Tokken bazında yüzdeyi uygula, sonra hedef para birimine çevir
+        const yeniFiyatTK = bazTK * (1 + parseFloat(yuzde ?? fiyat) / 100);
+        yeniFiyat = yeniFiyatTK * getKur(hedefPara) / getKur('Tokken');
+      } else {
+        // Kullanıcı doğrudan hedef para biriminde fiyat giriyor
+        yeniFiyat = parseFloat(fiyat);
+      }
+      yeniFiyat = r2(yeniFiyat);
+      const karYuzde = r2(bazHedefPara > 0 ? ((yeniFiyat - bazHedefPara) / bazHedefPara * 100) : 0);
+      ids.push(urn.id);
       fiyatlar.push(yeniFiyat);
-      paralar.push(para || u.para || 'TL');
+      paralar.push(hedefPara);
       karlar.push(karYuzde);
     }
 
@@ -63,7 +62,11 @@ export default async function handler(req) {
       DO UPDATE SET fiyat=EXCLUDED.fiyat, para=EXCLUDED.para,
                     kar_yuzde=EXCLUDED.kar_yuzde, guncelleme=NOW()`;
 
-    return allowCors(ok({ mesaj: `${ids.length} ürün güncellendi` }));
+    const zararSayisi = karlar.filter(k => k < 0).length;
+    const mesaj = zararSayisi > 0
+      ? `${ids.length} ürün güncellendi — ⚠️ ${zararSayisi} üründe zarar oluştu`
+      : `${ids.length} ürün güncellendi`;
+    return allowCors(ok({ mesaj, zararSayisi }));
   } catch (e) { return allowCors(err(e.message, 500)); }
 }
 export const config = { runtime: 'edge' };

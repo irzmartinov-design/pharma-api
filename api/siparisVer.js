@@ -17,8 +17,16 @@ export default async function handler(req) {
 
     const sql = getDb();
 
-    // Müşteri siparişi → Bayi onayı beklenir; Bayi/Admin siparişi → direk Admin'e
-    const durum = (rol === 'Musteri' && bayiKod) ? 'Bayi Onay Bekliyor' : 'Admin Onay Bekliyor';
+    // Bayi bu müşteriye otomatik onay tanımlamışsa Bayi onay adımı atlanır
+    let otomatikOnay = false;
+    if (rol === 'Musteri' && bayiKod) {
+      const [musteri] = await sql`SELECT otomatik_onay FROM kullanicilar WHERE id=${musteriId} LIMIT 1`;
+      otomatikOnay = !!musteri?.otomatik_onay;
+    }
+
+    // Müşteri siparişi → Bayi onayı beklenir (otomatik onaylıysa direkt Admin'e); Bayi/Admin siparişi → direk Admin'e
+    const durum = (rol === 'Musteri' && bayiKod && !otomatikOnay) ? 'Bayi Onay Bekliyor' : 'Admin Onay Bekliyor';
+    const onayBayi = otomatikOnay ? 'Onaylandı (Otomatik)' : null;
 
     // Lazy migration: bayi_toplam kolonu
     try { await sql`ALTER TABLE siparisler ADD COLUMN IF NOT EXISTS bayi_toplam NUMERIC DEFAULT 0`; } catch(e) {}
@@ -41,12 +49,12 @@ export default async function handler(req) {
       const bayiToplam = bayiFiyatMap[u.urunId] ? bayiFiyatMap[u.urunId] * (parseInt(u.miktar) || 0) : 0;
       await sql`
         INSERT INTO siparisler (id, musteri_id, bayi_kod, adres_id, urun_adi, marka, marka_id,
-          kategori, kat_id, urun_id, miktar, birim_fiyat, para, toplam, bayi_toplam, durum, siparis_not)
+          kategori, kat_id, urun_id, miktar, birim_fiyat, para, toplam, bayi_toplam, durum, siparis_not, onay_bayi)
         VALUES (${id}, ${musteriId}, ${bayiKod||null}, ${adresId||null},
           ${u.urunAdi}, ${u.marka||''}, ${u.markaId||null},
           ${u.kategori||''}, ${u.katId||null}, ${u.urunId},
           ${parseInt(u.miktar)}, ${parseFloat(u.birimFiyat)}, ${u.para},
-          ${parseFloat(u.toplam)}, ${bayiToplam}, ${durum}, ${sipNot||null})`;
+          ${parseFloat(u.toplam)}, ${bayiToplam}, ${durum}, ${sipNot||null}, ${onayBayi})`;
     }
 
     return allowCors(ok({ mesaj: 'Sipariş alındı', siparisId: grupId }));

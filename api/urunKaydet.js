@@ -43,17 +43,18 @@ export default async function handler(req) {
         ad=${ad}, marka_id=${gercekMarkaId}, marka=${markaAdi},
         kat_id=${gercekKatId}, kategori=${katAdi},
         aktif_madde=${aktifMadde||null}, birim=${birim||null}, ambalaj=${ambalaj||null},
-        fiyat_bayi=${fiyatBayi||null}, fiyat_musteri=${fiyatMusteri||null}, para=${para||'TL'}
+        fiyat_bayi=${fiyatBayi||null}, fiyat_taban=${fiyatBayi||null},
+        fiyat_musteri=${fiyatMusteri||null}, para=${para||'Tokken'}
         WHERE id=${id}`;
       return allowCors(ok({ mesaj: 'Ürün güncellendi' }));
     } else {
       // Ekle
       const yeniId = 'URN-' + Date.now();
       await sql`INSERT INTO urunler
-        (id, ad, marka_id, marka, kat_id, kategori, aktif_madde, birim, ambalaj, fiyat_bayi, fiyat_musteri, para, aktif)
+        (id, ad, marka_id, marka, kat_id, kategori, aktif_madde, birim, ambalaj, fiyat_bayi, fiyat_taban, fiyat_musteri, para, aktif)
         VALUES (${yeniId}, ${ad}, ${gercekMarkaId}, ${markaAdi}, ${gercekKatId}, ${katAdi},
           ${aktifMadde||null}, ${birim||null}, ${ambalaj||null},
-          ${fiyatBayi||null}, ${fiyatMusteri||null}, ${para||'TL'}, TRUE)`;
+          ${fiyatBayi||null}, ${fiyatBayi||null}, ${fiyatMusteri||null}, ${para||'Tokken'}, TRUE)`;
       // Aktif otomatik oranlı bayilere yeni ürünü ekle
       if (fiyatBayi) {
         const aktifBayiler = await sql`SELECT id, musteri_fiyat_orani FROM kullanicilar WHERE rol='Bayi' AND aktif=TRUE AND musteri_fiyat_orani_aktif=TRUE AND musteri_fiyat_orani > 0`.catch(() => []);

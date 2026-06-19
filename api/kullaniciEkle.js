@@ -10,6 +10,7 @@ export default async function handler(req) {
   try {
     const { ad, email, sifre, rol, bayiId, para } = await req.json();
     if (!ad || !email || !rol) return allowCors(err('Ad, email ve rol zorunlu'));
+    if (rol === 'Musteri' && !bayiId) return allowCors(err('Müşteri bir Bayiye bağlı olmalı'));
     const sql = getDb();
     const [mevcut] = await sql`SELECT id FROM kullanicilar WHERE email=${email} LIMIT 1`;
     if (mevcut) return allowCors(err('Bu email zaten kayıtlı'));

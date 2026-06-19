@@ -1,4 +1,4 @@
-import { getDb, ok, err, allowCors } from './_db.js';
+import { getDb, ok, err, allowCors, r2 } from './_db.js';
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
@@ -31,6 +31,9 @@ export default async function handler(req) {
       const yeniFiyatTK = yeniFiyat * getKur(urun.para) / getKur(hedefPara);
       karYuzde = bazTK > 0 ? ((yeniFiyatTK - bazTK) / bazTK * 100) : 0;
     }
+
+    yeniFiyat = r2(yeniFiyat);
+    karYuzde = r2(karYuzde);
 
     await sql`
       INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
