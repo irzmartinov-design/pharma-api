@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB Seed Tool — Admin Only</title>
+<style>
+  body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 30px; max-width: 700px; margin: auto; }
+  h2 { color: #38bdf8; }
+  .btn { background: #0ea5e9; color: white; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 6px 4px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-danger { background: #ef4444; }
+  .btn-success { background: #22c55e; }
+  .log { background: #1e293b; border-radius: 8px; padding: 14px; margin-top: 16px; min-height: 200px; max-height: 500px; overflow-y: auto; font-size: 13px; line-height: 1.7; }
+  .ok  { color: #86efac; }
+  .err { color: #fca5a5; }
+  .inf { color: #93c5fd; }
+  .warn { color: #fde68a; }
+  input { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 8px 12px; border-radius: 6px; width: 260px; }
+  .step { background: #1e293b; border-radius: 6px; padding: 10px 14px; margin: 8px 0; }
+  .step span { font-weight: bold; color: #38bdf8; }
+</style>
+</head>
+<body>
+<h2>🗄️ Veritabanı Seed Aracı</h2>
+<p style="color:#94a3b8">Bu araç yalnızca Admin tarafından, test ortamında kullanılır.<br>
+Tüm veriler silinir ve Optimum ürünleri yeniden yüklenir.</p>
+
+<div class="step">
+  <span>1.</span> Gizli anahtar:
+  <input type="password" id="anahtar" placeholder="RESET-PHARMA-2026" value="RESET-PHARMA-2026">
+</div>
+<div class="step">
+  <span>2.</span> API tabanı (boş bırakırsan otomatik):
+  <input type="text" id="apiBase" placeholder="https://pharma-api-xxx.vercel.app" value="">
+</div>
+
+<div style="margin-top:14px">
+  <button class="btn btn-danger" id="btnReset" onclick="resetDb()">🗑️ 1. Veritabanını Sıfırla</button>
+  <button class="btn" id="btnSeed" onclick="seedAll()">📦 2. Ürünleri Yükle</button>
+  <button class="btn btn-success" id="btnAll" onclick="resetAndSeed()">⚡ Sıfırla + Yükle (Tek Tık)</button>
+</div>
+
+<div class="log" id="log"><span class="inf">Hazır. Butona bas.</span></div>
+
+<script>
+// ─── Yardımcılar ─────────────────────────────────────────────────────────────
+function getBase() {
+  const v = document.getElementById('apiBase').value.trim();
+  return v || window.location.origin;
+}
+function getKey() { return document.getElementById('anahtar').value.trim(); }
+
+let logEl = document.getElementById('log');
+function log(msg, cls='inf') {
+  logEl.innerHTML += `<div class="${cls}">${msg}</div>`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+async function apiPost(path, body) {
+  const res = await fetch(getBase() + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// ─── Reset ───────────────────────────────────────────────────────────────────
+async function resetDb() {
+  clearLog();
+  log('Veritabanı sıfırlanıyor...', 'warn');
+  try {
+    const r = await apiPost('/api/resetDb', { gizliAnahtar: getKey() });
+    if (r.basarili) log('✅ ' + r.mesaj, 'ok');
+    else log('❌ ' + r.hata, 'err');
+  } catch(e) { log('❌ ' + e.message, 'err'); }
+}
+
+// ─── Ürün Verisi ─────────────────────────────────────────────────────────────
+const MARKALAR = [
+  { id: 'MRK-OPC', ad: 'Optimum Classic' },
+  { id: 'MRK-OPO', ad: 'Optimum Overdose' },
+  { id: 'MRK-OPN', ad: 'Optimum New' },
+  { id: 'MRK-IRN', ad: 'Iron Pharma' },
+  { id: 'MRK-SWS', ad: 'Swiss Pharma' },
+];
+
+const KATEGORILER = [
+  { id: 'KAT-OPC-MON', ad: 'Enjektabl Mono', markaId: 'MRK-OPC' },
+  { id: 'KAT-OPC-MIX', ad: 'Enjektabl Mix',  markaId: 'MRK-OPC' },
+  { id: 'KAT-OPC-ORL', ad: 'Oral Tablet',     markaId: 'MRK-OPC' },
+  { id: 'KAT-OPO-MON', ad: 'Enjektabl Mono', markaId: 'MRK-OPO' },
+  { id: 'KAT-OPO-MIX', ad: 'Enjektabl Mix',  markaId: 'MRK-OPO' },
+  { id: 'KAT-OPO-ORL', ad: 'Oral Tablet',     markaId: 'MRK-OPO' },
+  { id: 'KAT-OPN-MON', ad: 'Enjektabl Mono', markaId: 'MRK-OPN' },
+  { id: 'KAT-OPN-MIX', ad: 'Enjektabl Mix',  markaId: 'MRK-OPN' },
+  { id: 'KAT-OPN-ORL', ad: 'Oral Tablet',     markaId: 'MRK-OPN' },
+  { id: 'KAT-IRN-MON', ad: 'Enjektabl Mono', markaId: 'MRK-IRN' },
+  { id: 'KAT-IRN-MIX', ad: 'Enjektabl Mix',  markaId: 'MRK-IRN' },
+  { id: 'KAT-IRN-ORL', ad: 'Oral Tablet',     markaId: 'MRK-IRN' },
+  { id: 'KAT-SWS-MON', ad: 'Enjektabl Mono', markaId: 'MRK-SWS' },
+  { id: 'KAT-SWS-MIX', ad: 'Enjektabl Mix',  markaId: 'MRK-SWS' },
+  { id: 'KAT-SWS-ORL', ad: 'Oral Tablet',     markaId: 'MRK-SWS' },
+];
+
+const OPC_MON = { markaId:'MRK-OPC', marka:'Optimum Classic', katId:'KAT-OPC-MON', kategori:'Enjektabl Mono', para:'EUR' };
+const OPC_MIX = { markaId:'MRK-OPC', marka:'Optimum Classic', katId:'KAT-OPC-MIX', kategori:'Enjektabl Mix', para:'EUR' };
+const OPC_ORL = { markaId:'MRK-OPC', marka:'Optimum Classic', katId:'KAT-OPC-ORL', kategori:'Oral Tablet', para:'EUR' };
+const OPO_MON = { markaId:'MRK-OPO', marka:'Optimum Overdose', katId:'KAT-OPO-MON', kategori:'Enjektabl Mono', para:'EUR' };
+const OPO_MIX = { markaId:'MRK-OPO', marka:'Optimum Overdose', katId:'KAT-OPO-MIX', kategori:'Enjektabl Mix', para:'EUR' };
+const OPO_ORL = { markaId:'MRK-OPO', marka:'Optimum Overdose', katId:'KAT-OPO-ORL', kategori:'Oral Tablet', para:'EUR' };
+const OPN_MON = { markaId:'MRK-OPN', marka:'Optimum New', katId:'KAT-OPN-MON', kategori:'Enjektabl Mono', para:'EUR' };
+const OPN_MIX = { markaId:'MRK-OPN', marka:'Optimum New', katId:'KAT-OPN-MIX', kategori:'Enjektabl Mix', para:'EUR' };
+const OPN_ORL = { markaId:'MRK-OPN', marka:'Optimum New', katId:'KAT-OPN-ORL', kategori:'Oral Tablet', para:'EUR' };
+
+let _n = 1;
+function u(ad, aktifMadde, ambalaj, ctx) {
+  return { id: 'URN-' + String(_n++).padStart(4,'0'), ad, aktifMadde, ambalaj: ambalaj||null, ...ctx };
+}
+
+const URUNLER = [
+  // ── Optimum Classic · Enjektabl Mono ──
+  u('TEST 50',      'Trestolone Acetate 50 mg/ml',               '50 mg x 10 ml Glass Vial',  OPC_MON),
+  u('MENT 50',      'Testosterone 50 mg/ml',                      '50 mg x 10 ml Glass Vial',  OPC_MON),
+  u('TEST 100',     'Testosterone Propionate 100 mg/ml',          '100 mg x 10 ml Glass Vial', OPC_MON),
+  u('TEST 200',     'Testosterone Cypionate 200 mg/ml',           '200 mg x 10 ml Glass Vial', OPC_MON),
+  u('TEST 250',     'Testosterone Enanthate 250 mg/ml',           '250 mg x 10 ml Glass Vial', OPC_MON),
+  u('TEST 400',     'Testosterone Enanthate 100mg + Cypionate 100mg + Isocaproate 100mg + Decanoate 100mg','400 mg x 10 ml Glass Vial', OPC_MON),
+  u('SUSTA 250',    'Test Propionate 30mg + Phenylpropionate 60mg + Isocaproate 60mg + Decanoate 100mg',   '250 mg x 10 ml Glass Vial', OPC_MON),
+  u('TREN 75',      'Trenbolone Acetate 75 mg/ml',                '75 mg x 10 ml Glass Vial',  OPC_MON),
+  u('TREN 100',     'Trenbolone Hexahydrobenzylcarbonate 100 mg/ml (Parabolan)','100 mg x 10 ml Glass Vial', OPC_MON),
+  u('TREN 150',     'Trenbolone Acetate 50mg + HBZ 50mg + Enanthate 50mg',     '150 mg x 10 ml Glass Vial', OPC_MON),
+  u('TREN 200',     'Trenbolone Enanthate 200 mg/ml',             '200 mg x 10 ml Glass Vial', OPC_MON),
+  u('DECA 100',     'Nandrolone Phenylpropionate 100 mg/ml (Durabolin)',        '100 mg x 10 ml Glass Vial', OPC_MON),
+  u('DECA 200',     'Nandrolone Decanoate 200 mg/ml (Deca-Durabolin)',          '200 mg x 10 ml Glass Vial', OPC_MON),
+  u('DECA 400',     'Nandrolone Decanoate 100mg + Cypionate 100mg + Isocaproate 100mg + Undecanoate 100mg','400 mg x 10 ml Glass Vial', OPC_MON),
+  u('EQUI 200',     'Boldenone Undecylenate 200 mg/ml (Equipoise)',             '200 mg x 10 ml Glass Vial', OPC_MON),
+  u('EQUI 400',     'Boldenone Undecylenate 100mg + Cypionate 100mg + Isocaproate 100mg + Decanoate 100mg','400 mg x 10 ml Glass Vial', OPC_MON),
+  u('MASTE 100',    'Drostanolone Propionate 100 mg/ml',          '100 mg x 10 ml Glass Vial', OPC_MON),
+  u('MASTE 200',    'Drostanolone Enanthate 200 mg/ml',           '200 mg x 10 ml Glass Vial', OPC_MON),
+  u('1-TEST 75',    'Dihydroboldenone Cypionate 75 mg/ml (1-Testosterone)',     '75 mg x 10 ml Glass Vial',  OPC_MON),
+  u('PRIMO 75',     'Methenolone Acetate 75 mg/ml',               '75 mg x 10 ml Glass Vial',  OPC_MON),
+  u('PRIMO 100',    'Methenolone Enanthate 100 mg/ml',            '100 mg x 10 ml Glass Vial', OPC_MON),
+  u('STANO 50',     'Stanozolol 50 mg/ml (Aqueous Suspension)',   '50 mg x 10 ml Glass Vial',  OPC_MON),
+  u('STANO 100',    'Stanozolol Cypionate 100 mg/ml (Oil-based)', '100 mg x 10 ml Glass Vial', OPC_MON),
+  u('PREGNYL 5000', 'Human Chorionic Gonadotropin (HCG) 5000 IU','5000 IU Ampoule + Bacteriostatic Water', OPC_MON),
+
+  // ── Optimum Classic · Enjektabl Mix ──
+  u('DECATEST 350','Nandrolone Decanoate 150mg + Testosterone Enanthate 200mg',                         '350 mg x 10 ml Glass Vial', OPC_MIX),
+  u('EQUITEST 350','Boldenone Undecylenate 150mg + Testosterone Enanthate 200mg',                       '350 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 150',   'Trenbolone Acetate 50mg + Drostanolone Propionate 50mg + Testosterone Propionate 50mg','150 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 175',   'Trenbolone Acetate 75mg + Testosterone Propionate 75mg + Stanozolol Cypionate 25mg','175 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 200',   'Trenbolone HBZ 100mg + Testosterone Phenylpropionate 100mg',                        '200 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 225',   'Trenbolone Acetate 75mg + Methenolone Acetate 75mg + Testosterone Acetate 75mg',   '225 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 250',   'Trenbolone Enanthate 125mg + Drostanolone Enanthate 125mg',                         '250 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 275',   'Boldenone Undecylenate 100mg + Testosterone Enanthate 100mg + Stanozolol Cypionate 75mg','275 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 300',   'Trenbolone Enanthate 100mg + Boldenone Undecylenate 100mg + Testosterone Enanthate 100mg','300 mg x 10 ml Glass Vial', OPC_MIX),
+  u('ULTRA 350',   'Boldenone Undecylenate 150mg + Trenbolone Enanthate 100mg + Stanozolol Cypionate 100mg',  '350 mg x 10 ml Glass Vial', OPC_MIX),
+  u('MEGA 200',    'Trenbolone Enanthate 100mg + Stanozolol Cypionate 100mg',                           '200 mg x 10 ml Glass Vial', OPC_MIX),
+  u('MEGA 225',    'Drostanolone Enanthate 125mg + Stanozolol Cypionate 100mg',                         '225 mg x 10 ml Glass Vial', OPC_MIX),
+  u('MEGA 250',    'Trenbolone Acetate 60mg + Testosterone Propionate 80mg + Boldenone Undecylenate 110mg',   '250 mg x 10 ml Glass Vial', OPC_MIX),
+  u('MEGA 275',    'Trenbolone Enanthate 100mg + Drostanolone Enanthate 100mg + Stanozolol Cypionate 75mg',   '275 mg x 10 ml Glass Vial', OPC_MIX),
+  u('MEGA 300',    'Trenbolone Enanthate 100mg + Drostanolone Enanthate 100mg + Testosterone Enanthate 100mg','300 mg x 10 ml Glass Vial', OPC_MIX),
+
+  // ── Optimum Classic · Oral Tablet ──
+  u('CLEN-X',         'Clenbuterol HCl 20 mcg',                    '50 Tablets per box',    OPC_ORL),
+  u('OXANDROL',       'Oxandrolone 10 mg',                          '100 Tablets per pouch', OPC_ORL),
+  u('STANO 10',       'Stanozolol 10 mg',                           '100 Tablets per pouch', OPC_ORL),
+  u('TURINA 10',      '4-Chlorodehydromethyltestosterone 10 mg (Turinabol)','100 Tablets per box', OPC_ORL),
+  u('ANADROL 50',     'Oxymetholone 50 mg',                         '50 Tablets per pouch',  OPC_ORL),
+  u('DIANABOL',       'Methandrostenolone 10 mg',                   '100 Tablets per pouch', OPC_ORL),
+  u('ARIMIDEX',       'Anastrozole 1 mg',                           '50 Tablets per pouch',  OPC_ORL),
+  u('LETRO',          'Letrozole 1 mg (Femara)',                     '50 Tablets per pouch',  OPC_ORL),
+  u('CLENBUTEROL 20', 'Clenbuterol HCl 20 mcg',                    '100 Tablets per box',   OPC_ORL),
+
+  // ── Optimum Overdose · Enjektabl Mono ──
+  u('TESTABOL 100',  'Testosterone Propionate 100 mg/ml',  '100 mg x 10 ml Glass Vial', OPO_MON),
+  u('TESTABOL 200',  'Testosterone Cypionate 200 mg/ml',   '200 mg x 10 ml Glass Vial', OPO_MON),
+  u('TESTABOL 250',  'Testosterone Enanthate 250 mg/ml',   '250 mg x 10 ml Glass Vial', OPO_MON),
+  u('TESTABOL 400',  'Testosterone Acetate 60mg + Enanthate 142mg + Decanoate 198mg','400 mg x 10 ml Glass Vial', OPO_MON),
+  u('TRENABOL 100',  'Trenbolone Acetate 100 mg/ml',       '100 mg x 10 ml Glass Vial', OPO_MON),
+  u('TRENABOL 125',  'Trenbolone Hexahydrobenzylcarbonate 125 mg/ml','125 mg x 10 ml Glass Vial', OPO_MON),
+  u('TRENABOL 200',  'Trenbolone Enanthate 200 mg/ml',     '200 mg x 10 ml Glass Vial', OPO_MON),
+  u('DECABOL 200',   'Nandrolone Decanoate 200 mg/ml',     '200 mg x 10 ml Glass Vial', OPO_MON),
+  u('BOLDEBOL 200',  'Boldenone Undecylenate 200 mg/ml',   '200 mg x 10 ml Glass Vial', OPO_MON),
+  u('MASTEBOL 100',  'Drostanolone Propionate 100 mg/ml',  '100 mg x 10 ml Glass Vial', OPO_MON),
+  u('PRIMOBOL 100',  'Methenolone Enanthate 100 mg/ml',    '100 mg x 10 ml Glass Vial', OPO_MON),
+  u('SUSTABOL 300',  'Testosterone Propionate 63mg + Cypionate 100mg + Isocaproate 137mg','300 mg x 10 ml Glass Vial', OPO_MON),
+  u('STANOBOL 50',   'Stanozolol 50 mg/ml',                '50 mg x 10 ml Glass Vial',  OPO_MON),
+
+  // ── Optimum Overdose · Enjektabl Mix ──
+  u('ULTRABOL 150',  'Trenbolone Acetate 50mg + Testosterone Propionate 50mg + Drostanolone Propionate 50mg','150 mg x 10 ml Glass Vial', OPO_MIX),
+  u('ULTRABOL 350',  'Testosterone Enanthate 125mg + Nandrolone Decanoate 125mg + Trenbolone Enanthate 100mg','350 mg x 10 ml Glass Vial', OPO_MIX),
+  u('ULTRABOL 400',  'Testosterone Enanthate 150mg + Boldenone Undecylenate 125mg + Nandrolone Decanoate 125mg','400 mg x 10 ml Glass Vial', OPO_MIX),
+  u('MEGABOL 300',   'Trenbolone Enanthate 100mg + Testosterone Enanthate 100mg + Nandrolone Decanoate 100mg','300 mg x 10 ml Glass Vial', OPO_MIX),
+  u('MEGABOL 350',   'Testosterone Enanthate 150mg + Trenbolone Enanthate 100mg + Drostanolone Enanthate 100mg','350 mg x 10 ml Glass Vial', OPO_MIX),
+
+  // ── Optimum Overdose · Oral Tablet ──
+  u('HALOTESTIN 10',  'Fluoxymesterone 10 mg',                 '100 Tablets per box', OPO_ORL),
+  u('ARIMIDEX 1 MG', 'Anastrozole 1 mg',                      '100 Tablets per box', OPO_ORL),
+  u('METRIBOLONE 1 MG','Methyl Trenbolone (Metribolone) 1 mg', '100 Tablets per box', OPO_ORL),
+  u('SUPERDROL 10',   'Methyldrostanolone 10 mg',              '100 Tablets per box', OPO_ORL),
+  u('ANAVAR 10',      'Oxandrolone 10 mg',                     '100 Tablets per box', OPO_ORL),
+  u('ANAPOLON 25',    'Oxymetholone 25 mg',                    '100 Tablets per box', OPO_ORL),
+  u('DIANABOL 10',    'Methandrostenolone 10 mg',              '100 Tablets per box', OPO_ORL),
+  u('TURINA 10',      '4-Chlorodehydromethyltestosterone 10 mg','100 Tablets per box', OPO_ORL),
+  u('STANO 10',       'Stanozolol 10 mg',                      '100 Tablets per box', OPO_ORL),
+  u('NOLVADEX 10',    'Tamoxifen Citrate 10 mg',               '100 Tablets per box', OPO_ORL),
+  u('PROVIRON 25',    'Mesterolone 25 mg',                     '100 Tablets per box', OPO_ORL),
+  u('CLENBUTEROL 50', 'Clenbuterol HCL 50 mcg',               '100 Tablets per box', OPO_ORL),
+
+  // ── Optimum New · Enjektabl Mono (Ampules) ──
+  u('TESTABOL 100',  'Testosterone Propionate 100 mg/ml',  '100 mg x 10 Ampules', OPN_MON),
+  u('TESTABOL 200',  'Testosterone Cypionate 200 mg/ml',   '200 mg x 10 Ampules', OPN_MON),
+  u('TESTABOL 250',  'Testosterone Enanthate 250 mg/ml',   '250 mg x 10 Ampules', OPN_MON),
+  u('TESTABOL 400',  'Testosterone Acetate 60mg + Enanthate 142mg + Decanoate 198mg','400 mg x 10 Ampules', OPN_MON),
+  u('TRENABOL 100',  'Trenbolone Acetate 100 mg',          '100 mg x 10 Ampules', OPN_MON),
+  u('TRENABOL 125',  'Trenbolone Hexahydrobenzylcarbonate 125 mg','125 mg x 10 Ampules', OPN_MON),
+  u('TRENABOL 200',  'Trenbolone Enanthate 200 mg',        '200 mg x 10 Ampules', OPN_MON),
+  u('DECABOL 200',   'Nandrolone Decanoate 200 mg',        '200 mg x 10 Ampules', OPN_MON),
+  u('BOLDEBOL 200',  'Boldenone Undecylenate 200 mg',      '200 mg x 10 Ampules', OPN_MON),
+  u('MASTEBOL 100',  'Drostanolone Propionate 100 mg',     '100 mg x 10 Ampules', OPN_MON),
+  u('PRIMOBOL 100',  'Methenolone Enanthate 100 mg',       '100 mg x 10 Ampules', OPN_MON),
+  u('SUSTABOL 300',  'Testosterone Propionate 63mg + Cypionate 100mg + Isocaproate 137mg','300 mg x 10 Ampules', OPN_MON),
+  u('STANABOL',      'Stanozolol Suspension 50 mg',        '50 mg x 10 Ampules',  OPN_MON),
+
+  // ── Optimum New · Enjektabl Mix (Ampules) ──
+  u('ULTRABOL 150',  'Trenbolone Acetate 50mg + Testosterone Propionate 50mg + Drostanolone Propionate 50mg','150 mg x 10 Ampules', OPN_MIX),
+  u('ULTRABOL 400',  'Trenbolone Enanthate 100mg + Testosterone Enanthate 150mg + Boldenone Undecylenate 150mg','400 mg x 10 Ampules', OPN_MIX),
+  u('MEGABOL 350',   'Trenbolone Enanthate 100mg + Drostanolone Enanthate 100mg + Testosterone Enanthate 150mg','350 mg x 10 Ampules', OPN_MIX),
+  u('MEGABOL 400',   'Nandrolone Decanoate 125mg + Boldenone Undecylenate 125mg + Testosterone Enanthate 150mg','400 mg x 10 Ampules', OPN_MIX),
+
+  // ── Optimum New · Oral Tablet / Kapsül ──
+  u('ANAVAR',          'Oxandrolone 10 mg',                           '100 Tablets',          OPN_ORL),
+  u('ANAPOLON 25',     'Oxymetholone 25 mg',                          '100 Tablets',          OPN_ORL),
+  u('DIANABOL 10',     'Methandrostenolone 10 mg',                    '100 Tablets',          OPN_ORL),
+  u('TURINA',          '4-Chlorodehydromethyltestosterone 10 mg',     '100 Tablets',          OPN_ORL),
+  u('STANO 10',        'Stanozolol 10 mg',                            '100 Tablets',          OPN_ORL),
+  u('NOLVADEX 10',     'Tamoxifen Citrate 10 mg',                     '100 Tablets',          OPN_ORL),
+  u('PROVIRON 25',     'Mesterolone 25 mg',                           '60 Tablets',           OPN_ORL),
+  u('DOXAN',           'Doxalp Mesylate 2 mg',                        '3 strips x 10 tablets',OPN_ORL),
+  u('DUTARIDE',        'Dutalp 0.5 mg',                               '3 strips x 10 tablets',OPN_ORL),
+  u('FINARIDE',        'Finalp 5 mg',                                 '3 strips x 10 tablets',OPN_ORL),
+  u('OPTIMUM-O',       'Alpha-O HCL 10 mg',                           '3 strips x 10 tablets',OPN_ORL),
+  u('TAMOXIN',         'Tamalp HCL 400 mcg',                          '3 strips x 10 capsules',OPN_ORL),
+  u('TERAMIN',         'Teralp HCL 2 mg',                             '3 strips x 10 tablets',OPN_ORL),
+  u('DAPOXETIN',       'Dapoxetine 60 mg',                            '10 x 10 Tablets',      OPN_ORL),
+  u('SILDENAFIL',      'Sildenafil Citrate 100 mg',                   '10 x 10 Tablets',      OPN_ORL),
+  u('TADALAFIL',       'Tadalafil 20 mg',                             '10 x 10 Tablets',      OPN_ORL),
+  u('VERDANAFIL',      'Vardenafil HCL 20 mg',                        '10 x 10 Tablets',      OPN_ORL),
+  u('ANASTROLE',       'Anastrozole 1 mg',                            '30 tablets',           OPN_ORL),
+  u('AROMESTANE',      'Exemestane 25 mg',                            '3 strips x 10 tablets',OPN_ORL),
+  u('TAMOREN',         'Tamoxifen Citrate 20 mg',                     '50 tablets',           OPN_ORL),
+  u('MODAFINIL',       'Modafinil 200 mg',                            '3 strips x 10 tablets',OPN_ORL),
+  u('ZOPICLONE',       'Zopiclone 7.5 mg',                            '3 strips x 10 tablets',OPN_ORL),
+  u('THYROID',         'Liothyronine Sodium 25 mcg',                  '30 tablets',           OPN_ORL),
+  u('CLENBUTEROL',     'Clenbuterol HCL 50 mcg',                     '5 strips x 20 tablets',OPN_ORL),
+  u('LGD-4033 LIGANDROX','LGD-4033 (Ligandrol) 10 mg',               '60 capsules per bottle',OPN_ORL),
+  u('MK-2866 OSTAROX', 'MK-2866 (Ostarine) 25 mg',                   '60 capsules per bottle',OPN_ORL),
+  u('RAD-140 TESTOLOX','RAD-140 (Testolone) 10 mg',                   '60 capsules per bottle',OPN_ORL),
+  u('MK-677 IBUTAMOX', 'MK-677 (Ibutamoren) 15 mg',                  '60 capsules per bottle',OPN_ORL),
+  u('GW-501516 CARDINOX','GW-501516 (Cardarine) 10 mg',               '60 capsules per bottle',OPN_ORL),
+  u('YK-11 MYOSTINOX', 'YK-11 5 mg',                                  '60 capsules per bottle',OPN_ORL),
+  u('SR9011 STENABOX', 'SR9011 20 mg',                                 '60 capsules per bottle',OPN_ORL),
+  u('BULKESTERON',     'LGD-4033 10 mg + MK-677 15 mg',               '60 capsules per bottle',OPN_ORL),
+  u('VOLUMIZER',       'RAD-140 10 mg + YK-11 5 mg',                  '60 capsules per bottle',OPN_ORL),
+  u('HYDOXYN',         'SR9009 20 mg + RAD-140 10 mg',                '60 capsules per bottle',OPN_ORL),
+  u('PCT LH FSH TEST', 'Natural LH/FSH/Testosterone support complex', '60 capsules per bottle',OPN_ORL),
+  u('THERMO FAT BURNER','Thermogenic complex blend',                   '60 capsules per bottle',OPN_ORL),
+  u('GINSENG PLUS',    'Panax Ginseng C.A. Meyer 200/400 mg',         'See product label',    OPN_ORL),
+  u('IODINE',          'IOD',                                          'See product label',    OPN_ORL),
+  u('MAGNEZINC',       'Zinc 10mg + Magnesium 375mg + Vitamin B6 1.8mg','See product label',  OPN_ORL),
+  u('OP-ZINC',         'Zinc 10 mg',                                   'See product label',    OPN_ORL),
+  u('OPTIVITAL',       '12 essential vitamins and minerals',           'See product label',    OPN_ORL),
+  u('VITAMIN C',       'Vitamin C (as ascorbic acid) 1000 mg',        'See product label',    OPN_ORL),
+  u('VITAMIN D3',      'Vitamin D3 (as cholecalciferol) 2500 IU',     'See product label',    OPN_ORL),
+  u('WAKE UP',         'Caffeine + L-Theanine',                        'See product label',    OPN_ORL),
+];
+
+// ─── Seed ────────────────────────────────────────────────────────────────────
+const BATCH = 50;
+
+async function seedAll() {
+  clearLog();
+  log(`Toplam ${URUNLER.length} ürün yüklenecek — ${Math.ceil(URUNLER.length/BATCH)} batch...`, 'inf');
+
+  // 1) Markalar + Kategoriler (tek seferde)
+  log('Markalar ve kategoriler ekleniyor...', 'inf');
+  const r0 = await apiPost('/api/seedBulk', { markalar: MARKALAR, kategoriler: KATEGORILER, urunler: [] });
+  if (!r0.basarili) { log('❌ Marka/Kategori hatası: ' + r0.hata, 'err'); return; }
+  log(`✅ ${MARKALAR.length} marka, ${KATEGORILER.length} kategori eklendi`, 'ok');
+
+  // 2) Ürünler (batch)
+  for (let i = 0; i < URUNLER.length; i += BATCH) {
+    const batch = URUNLER.slice(i, i + BATCH);
+    const from = i + 1, to = Math.min(i + BATCH, URUNLER.length);
+    log(`Ürünler ${from}–${to} yükleniyor...`, 'inf');
+    const r = await apiPost('/api/seedBulk', { urunler: batch });
+    if (!r.basarili) { log(`❌ Batch hatası (${from}-${to}): ` + r.hata, 'err'); return; }
+    log(`✅ Ürün ${from}–${to} yüklendi`, 'ok');
+  }
+
+  log('', '');
+  log(`🎉 Tamamlandı! ${URUNLER.length} ürün yüklendi.`, 'ok');
+  log('⚠️  Iron Pharma ve Swiss Pharma ürünleri ayrıca eklenecek.', 'warn');
+}
+
+async function resetAndSeed() {
+  clearLog();
+  log('Sıfırlama başlıyor...', 'warn');
+  try {
+    const r = await apiPost('/api/resetDb', { gizliAnahtar: getKey() });
+    if (!r.basarili) { log('❌ Reset hatası: ' + r.hata, 'err'); return; }
+    log('✅ Veritabanı sıfırlandı', 'ok');
+  } catch(e) { log('❌ ' + e.message, 'err'); return; }
+  await seedAll();
+}
+</script>
+</body>
+</html>

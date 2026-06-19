@@ -30,7 +30,7 @@ export default async function handler(req) {
         ORDER BY u.marka, u.kategori, u.ad`;
     } else {
       rows = await sql`
-        SELECT u.id, u.ad, u.marka, u.kategori, u.birim, u.ambalaj,
+        SELECT u.id, u.ad, u.marka, u.kategori, u.aktif_madde, u.birim, u.ambalaj,
                COALESCE(mf.fiyat, u.fiyat_musteri) AS fiyat,
                COALESCE(mf.para,  u.para)           AS para,
                CASE WHEN mf.id IS NULL THEN TRUE ELSE FALSE END AS genel_mi

@@ -54,6 +54,19 @@ export default async function handler(req) {
         VALUES (${yeniId}, ${ad}, ${gercekMarkaId}, ${markaAdi}, ${gercekKatId}, ${katAdi},
           ${aktifMadde||null}, ${birim||null}, ${ambalaj||null},
           ${fiyatBayi||null}, ${fiyatMusteri||null}, ${para||'TL'}, TRUE)`;
+      // Aktif otomatik oranlı bayilere yeni ürünü ekle
+      if (fiyatBayi) {
+        const aktifBayiler = await sql`SELECT id, musteri_fiyat_orani FROM kullanicilar WHERE rol='Bayi' AND aktif=TRUE AND musteri_fiyat_orani_aktif=TRUE AND musteri_fiyat_orani > 0`.catch(() => []);
+        for (const bayi of aktifBayiler) {
+          const oran = parseFloat(bayi.musteri_fiyat_orani);
+          const yeniFiyat = parseFloat(fiyatBayi) * (1 + oran / 100);
+          await sql`
+            INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
+            VALUES (${bayi.id}, ${yeniId}, ${yeniFiyat}, ${para||'TL'}, ${oran}, NOW())
+            ON CONFLICT (bayi_id, urun_id)
+            DO UPDATE SET fiyat=${yeniFiyat}, kar_yuzde=${oran}, guncelleme=NOW()`.catch(() => {});
+        }
+      }
       return allowCors(ok({ mesaj: 'Ürün eklendi', id: yeniId }));
     }
   } catch (e) { return allowCors(err(e.message, 500)); }

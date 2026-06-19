@@ -40,6 +40,23 @@ export default async function handler(req) {
       guncellenen++;
     }
 
+    // Aktif otomatik oranlı bayileri güncelle
+    const aktifBayiler = await sql`SELECT id, musteri_fiyat_orani FROM kullanicilar WHERE rol='Bayi' AND aktif=TRUE AND musteri_fiyat_orani_aktif=TRUE AND musteri_fiyat_orani > 0`.catch(() => []);
+    for (const bayi of aktifBayiler) {
+      const oran = parseFloat(bayi.musteri_fiyat_orani);
+      for (const row of rows) {
+        const yFB = fiyatBayi != null ? parseFloat(fiyatBayi) : null;
+        const taban = yFB != null ? (mod === 'yuzde' ? parseFloat(row.fiyat_bayi || 0) * (1 + yFB / 100) : yFB) : parseFloat(row.fiyat_bayi || 0);
+        if (taban <= 0) continue;
+        const yeniFiyat = taban * (1 + oran / 100);
+        await sql`
+          INSERT INTO bayi_fiyatlari (bayi_id, urun_id, fiyat, para, kar_yuzde, guncelleme)
+          VALUES (${bayi.id}, ${row.id}, ${yeniFiyat}, ${para}, ${oran}, NOW())
+          ON CONFLICT (bayi_id, urun_id)
+          DO UPDATE SET fiyat=${yeniFiyat}, para=${para}, kar_yuzde=${oran}, guncelleme=NOW()`;
+      }
+    }
+
     return allowCors(ok({ mesaj: `${guncellenen} ürün güncellendi`, basarili: true }));
   } catch (e) {
     return allowCors(err(e.message, 500));
