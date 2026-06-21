@@ -10,7 +10,7 @@ export default async function handler(req) {
     if (rol === 'Admin') {
       rows = await sql`
         SELECT u.id, u.ad, u.marka_id, u.marka, u.kat_id, u.kategori,
-               u.aktif_madde, u.birim, u.ambalaj,
+               u.aktif_madde, u.birim, u.ambalaj, u.gorsel_url,
                u.fiyat_taban AS fiyat_taban,
                u.fiyat_bayi  AS genel_fiyat_bayi,
                u.fiyat_musteri AS genel_fiyat_musteri,

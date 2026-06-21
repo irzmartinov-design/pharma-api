@@ -13,7 +13,7 @@ export default async function handler(req) {
     if (!root) return allowCors(err('Sipariş bulunamadı'));
 
     if (rol === 'Musteri') {
-      if (root.durum !== 'Bayi Onay Bekliyor') return allowCors(err('Bu sipariş artık düzenlenemez'));
+      if (root.durum !== 'Bayi Onay Bekliyor' && root.durum !== 'Admin Onay Bekliyor') return allowCors(err('Bu sipariş artık düzenlenemez'));
       if (root.musteri_id !== kullaniciId) return allowCors(err('Bu sipariş size ait değil'));
     } else if (rol === 'Bayi') {
       if (root.durum !== 'Admin Onay Bekliyor') return allowCors(err('Bu sipariş artık düzenlenemez'));

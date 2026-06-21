@@ -10,7 +10,7 @@ export default async function handler(req) {
   try {
     const raw = await req.json();
     const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    const { id, ad, email, tel, durum, sifre, para } = d;
+    const { id, ad, email, tel, durum, sifre, para, dil } = d;
     if (!id) return allowCors(err('ID zorunlu'));
 
     const sql = getDb();
@@ -35,6 +35,10 @@ export default async function handler(req) {
       await sql`UPDATE kullanicilar SET ad=${ad}, email=${email}, para=${para} WHERE id=${id}`;
     } else {
       await sql`UPDATE kullanicilar SET ad=${ad}, email=${email} WHERE id=${id}`;
+    }
+
+    if (dil !== undefined) {
+      await sql`UPDATE kullanicilar SET dil=${dil} WHERE id=${id}`;
     }
 
     return allowCors(ok({ mesaj: 'Güncellendi' }));

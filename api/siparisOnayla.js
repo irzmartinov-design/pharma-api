@@ -18,6 +18,8 @@ export default async function handler(req) {
       const adminNotu = karar !== 'Reddedildi' ? (not||null) : null;
       await sql`UPDATE siparisler SET onay_admin=${karar}, durum=${karar}, red=${red}, admin_notu=${adminNotu}
                 WHERE id=${siparisId} OR id LIKE ${siparisId + '-%'}`;
+      // TODO: karar==='Onaylandı' burada otomatik mail/SMS bildirimi tetiklenecek.
+      // siparisler.mail_gonderildi flag'i bu amaç için migrateDb.js'de hazır.
     }
     return allowCors(ok({ mesaj: 'Sipariş güncellendi' }));
   } catch (e) { return allowCors(err(e.message, 500)); }

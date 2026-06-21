@@ -14,7 +14,7 @@ export default async function handler(req) {
     const hash = await sha256(sifre);
     const sql = getDb();
     const [kullanici] = await sql`
-      SELECT id, ad, rol, bayi_id, para
+      SELECT id, ad, rol, bayi_id, para, dil
       FROM kullanicilar
       WHERE email = ${email} AND (sifre = ${hash} OR sifre IS NULL) AND aktif = TRUE
       LIMIT 1`;

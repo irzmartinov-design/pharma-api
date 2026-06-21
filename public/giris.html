@@ -1,9 +1,10 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Giriş</title>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Login</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.kart{background:#fff;border-radius:16px;padding:36px;width:360px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-h2{text-align:center;color:#1a1a2e;margin-bottom:24px;font-size:20px}
+body{font-family:'Segoe UI',sans-serif;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.kart{background:#fff;border-radius:16px;padding:36px;width:360px;box-shadow:0 4px 30px rgba(0,0,0,0.5)}
+h2{text-align:center;color:#1a1a2e;margin-bottom:4px;font-size:20px}
+.distributor{text-align:center;color:#5f6368;font-size:11px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:24px}
 .form-group{margin-bottom:14px}
 label{display:block;font-size:11px;font-weight:600;color:#5f6368;margin-bottom:4px}
 input{width:100%;padding:10px;border:1px solid #dadce0;border-radius:8px;font-size:14px}
@@ -12,18 +13,20 @@ input{width:100%;padding:10px;border:1px solid #dadce0;border-radius:8px;font-si
 .hata{background:#fce8e6;color:#d93025;padding:10px;border-radius:8px;font-size:12px;margin-top:12px;display:none}
 </style></head><body>
 <div class="kart">
-  <h2>🏢 Giriş Yap</h2>
-  <div class="form-group"><label>E-posta</label><input id="email" type="email" placeholder="email@örnek.com"></div>
-  <div class="form-group"><label>Şifre</label><input id="sifre" type="password" placeholder="••••••"></div>
-  <button class="btn" onclick="giris()">Giriş Yap</button>
+  <h2>🏢 Login</h2>
+  <p class="distributor">Official Distributor</p>
+  <div class="form-group"><label>Email</label><input id="email" type="email" placeholder="email@example.com"></div>
+  <div class="form-group"><label>Password</label><input id="sifre" type="password" placeholder="••••••"></div>
+  <button class="btn" onclick="giris()">Login</button>
   <div class="hata" id="hata"></div>
+  <button class="btn" style="background:#fff;color:#1a1a2e;border:1px solid #dadce0;margin-top:10px" onclick="window.open('katalog.html','_blank')">📋 Product Catalog</button>
 </div>
 <script>
 const API = '/api';
 async function giris() {
   var email = document.getElementById('email').value.trim();
   var sifre = document.getElementById('sifre').value;
-  if (!email || !sifre) { showHata('Email ve şifre girin'); return; }
+  if (!email || !sifre) { showHata('Enter email and password'); return; }
   try {
     var r = await fetch(API + '/girisYap', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -33,9 +36,9 @@ async function giris() {
       localStorage.setItem('_oturum', JSON.stringify(r.kullanici));
       window.location.href = 'dashboard.html';
     } else {
-      showHata(r.hata || 'Giriş başarısız');
+      showHata(r.hata || 'Login failed');
     }
-  } catch(e) { showHata('Bağlantı hatası'); }
+  } catch(e) { showHata('Connection error'); }
 }
 function showHata(m) {
   var el = document.getElementById('hata');

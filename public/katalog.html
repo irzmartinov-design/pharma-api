@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Catalog</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; background:#f8f9fa; margin:0; color:#1a1a2e; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .alt-baslik { color:#5f6368; font-size:13px; margin:0 0 20px; }
+  .filtre-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; background:#fff; padding:12px; border-radius:10px; border:1px solid #e8eaed; }
+  select, input[type=text] { font-size:13px; padding:7px 10px; border:1px solid #dadce0; border-radius:6px; background:#fff; color:#1a1a2e; }
+  select { min-width:150px; }
+  input[type=text] { flex:1; min-width:160px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; }
+  .grid-pdf { grid-template-columns: repeat(3, 1fr) !important; }
+  .kart { background:#fff; border:1px solid #e8eaed; border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:6px; page-break-inside:avoid; break-inside:avoid; }
+  .kart-gorsel { width:100%; height:140px; border-radius:8px; background:#f1f3f4; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:4px; }
+  .kart-gorsel img { width:100%; height:100%; object-fit:contain; }
+  .kart-gorsel-bos { font-size:28px; color:#c4c7cc; }
+  .kart-ust { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .kart-ad { font-weight:600; font-size:15px; margin:0; }
+  .badge { font-size:10px; padding:3px 8px; border-radius:6px; white-space:nowrap; font-weight:600; }
+  .badge-Mono, .badge-Enjektabl\ Mono { background:#e8f0fe; color:#1a73e8; }
+  .badge-Mix, .badge-Enjektabl\ Mix { background:#fef3e0; color:#b06000; }
+  .badge-Oral\ Tablet { background:#e6f4ea; color:#137333; }
+  .badge-SARM { background:#f3e8fd; color:#7b1fa2; }
+  .badge-Peptide { background:#fce4ec; color:#ad1457; }
+  .aktif-madde { font-size:12px; color:#5f6368; line-height:1.4; margin:0; }
+  .alt-bilgi { border-top:1px solid #f1f3f4; margin-top:4px; padding-top:8px; font-size:11px; color:#80868b; }
+  .marka-baslik { font-size:13px; font-weight:600; color:#5f6368; text-transform:uppercase; letter-spacing:.4px; margin:24px 0 10px; padding-bottom:6px; border-bottom:3px solid #dadce0; break-after:avoid; page-break-after:avoid; }
+  .marka-baslik:first-of-type { margin-top:0; }
+  .bos { color:#80868b; font-size:13px; padding:30px; text-align:center; }
+  .btn-pdf { font-size:13px; padding:7px 14px; border:1px solid #dadce0; border-radius:6px; background:#1a1a2e; color:#fff; cursor:pointer; white-space:nowrap; }
+  .btn-pdf:disabled { opacity:.6; cursor:wait; }
+  .pdf-baslik { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap">
+    <div>
+      <h1>📋 Product Catalog</h1>
+      <p class="alt-baslik">Product type and content information only — does not include pricing</p>
+    </div>
+    <button class="btn-pdf" id="btnPdf" onclick="pdfIndir()">📄 Download PDF</button>
+  </div>
+
+  <div class="filtre-bar">
+    <select id="fMarka" onchange="render()"><option value="">All Brands</option></select>
+    <select id="fKategori" onchange="render()"><option value="">All Categories</option></select>
+    <input type="text" id="fArama" placeholder="Search by product name or active ingredient..." oninput="render()">
+  </div>
+
+  <div id="icerik"><p class="bos">⏳ Loading...</p></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+var TUM_URUNLER = [];
+
+var MARKA_RENK = {
+  'Optimum Classic':  '#0c75c0',
+  'Optimum Overdose': '#0c75c0',
+  'Optimum New':       '#0c75c0',
+  'Swiss Pharma':      '#8e1b1b',
+  'Iron Pharma':       '#0a3a5c'
+};
+function markaRenk(marka) { return MARKA_RENK[marka] || '#5f6368'; }
+
+var KATEGORI_EN = {
+  'Enjektabl Mono': 'Injectable Mono',
+  'Enjektabl Mix': 'Injectable Mix',
+  'Oral Tablet': 'Oral Tablet',
+  'SARM': 'SARM',
+  'Peptide': 'Peptide'
+};
+function kategoriEn(k) { return KATEGORI_EN[k] || k; }
+
+var BIRIM_EN = {
+  'Ad': 'Unit',
+  'Kutu': 'Box'
+};
+function birimEn(b) {
+  if (!b) return b;
+  var parts = b.trim().split(' ');
+  if (parts.length === 2 && BIRIM_EN[parts[1]]) return parts[0] + ' ' + BIRIM_EN[parts[1]];
+  return b;
+}
+
+function yukle() {
+  fetch('/api/getKatalogVeri').then(function(r){ return r.json(); }).then(function(d){
+    if (!d.basarili) { document.getElementById('icerik').innerHTML = '<p class="bos">Failed to load.</p>'; return; }
+    TUM_URUNLER = d.urunler || [];
+
+    var markaSet = {}, katSet = {};
+    TUM_URUNLER.forEach(function(u){ if(u.marka) markaSet[u.marka]=1; if(u.kategori) katSet[u.kategori]=1; });
+    var mEl = document.getElementById('fMarka');
+    Object.keys(markaSet).sort().forEach(function(m){ mEl.innerHTML += '<option value="'+m+'">'+m+'</option>'; });
+    var kEl = document.getElementById('fKategori');
+    Object.keys(katSet).sort().forEach(function(k){ kEl.innerHTML += '<option value="'+k+'">'+kategoriEn(k)+'</option>'; });
+
+    render();
+  }).catch(function(){ document.getElementById('icerik').innerHTML = '<p class="bos">Connection error.</p>'; });
+}
+
+function render() {
+  var marka = document.getElementById('fMarka').value;
+  var kategori = document.getElementById('fKategori').value;
+  var arama = document.getElementById('fArama').value.toLowerCase().trim();
+
+  var filtreli = TUM_URUNLER.filter(function(u){
+    if (marka && u.marka !== marka) return false;
+    if (kategori && u.kategori !== kategori) return false;
+    if (arama && !((u.ad||'').toLowerCase().indexOf(arama)>-1 || (u.aktif_madde||'').toLowerCase().indexOf(arama)>-1)) return false;
+    return true;
+  });
+
+  var icerik = document.getElementById('icerik');
+  if (!filtreli.length) { icerik.innerHTML = '<p class="bos">No matching products.</p>'; return; }
+
+  var gruplar = {};
+  filtreli.forEach(function(u){
+    var k = u.marka || 'Other';
+    if (!gruplar[k]) gruplar[k] = [];
+    gruplar[k].push(u);
+  });
+
+  var h = '';
+  Object.keys(gruplar).sort().forEach(function(markaAdi){
+    var renk = markaRenk(markaAdi);
+    h += '<div class="marka-baslik" style="border-bottom-color:'+renk+';color:'+renk+'">'+markaAdi+'</div><div class="grid">';
+    gruplar[markaAdi].forEach(function(u){
+      var badgeClass = 'badge-' + (u.kategori||'').replace(/ /g,'\\ ');
+      h += '<div class="kart" style="border-top:3px solid '+renk+'">';
+      h += '<div class="kart-gorsel">'+(u.gorsel_url ? '<img src="'+u.gorsel_url+'" alt="'+u.ad+'" loading="lazy">' : '<span class="kart-gorsel-bos">📦</span>')+'</div>';
+      h += '<div class="kart-ust"><p class="kart-ad">'+u.ad+'</p><span class="badge '+badgeClass+'">'+kategoriEn(u.kategori||'')+'</span></div>';
+      h += '<p class="aktif-madde">'+(u.aktif_madde||'—')+'</p>';
+      h += '<div class="alt-bilgi">'+(birimEn(u.birim)||'—')+' · '+(u.ambalaj||'—')+'</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  icerik.innerHTML = h;
+}
+
+function kartHtml(u, renk) {
+  var badgeClass = 'badge-' + (u.kategori||'').replace(/ /g,'\\ ');
+  var h = '<div class="kart" style="border-top:3px solid '+renk+'">';
+  h += '<div class="kart-gorsel">'+(u.gorsel_url ? '<img src="'+u.gorsel_url+'" alt="'+u.ad+'">' : '<span class="kart-gorsel-bos">📦</span>')+'</div>';
+  h += '<div class="kart-ust"><p class="kart-ad">'+u.ad+'</p><span class="badge '+badgeClass+'">'+kategoriEn(u.kategori||'')+'</span></div>';
+  h += '<p class="aktif-madde">'+(u.aktif_madde||'—')+'</p>';
+  h += '<div class="alt-bilgi">'+(birimEn(u.birim)||'—')+' · '+(u.ambalaj||'—')+'</div>';
+  h += '</div>';
+  return h;
+}
+
+// PDF için içerik sabit A4 sayfa bloklarına önceden bölünür — motorun nereyi
+// keseceğini tahmin etmesine gerek kalmaz, sayfa sınırları zaten kesindir.
+function pdfSayfalariOlustur(filtreli) {
+  var KART_PER_SAYFA = 9; // 3 sütun x 3 satır
+  var gruplar = {};
+  filtreli.forEach(function(u){
+    var k = u.marka || 'Other';
+    if (!gruplar[k]) gruplar[k] = [];
+    gruplar[k].push(u);
+  });
+
+  var sayfalar = [];
+  var sayfaHtml = '';
+  var sayfaKartSayisi = 0;
+
+  Object.keys(gruplar).sort().forEach(function(markaAdi){
+    var renk = markaRenk(markaAdi);
+    var urunler = gruplar[markaAdi];
+
+    if (sayfaKartSayisi > 0) {
+      sayfalar.push(sayfaHtml);
+      sayfaHtml = '';
+      sayfaKartSayisi = 0;
+    }
+
+    sayfaHtml += '<div class="marka-baslik" style="border-bottom-color:'+renk+';color:'+renk+'">'+markaAdi+'</div><div class="grid grid-pdf">';
+
+    urunler.forEach(function(u){
+      if (sayfaKartSayisi >= KART_PER_SAYFA) {
+        sayfaHtml += '</div>';
+        sayfalar.push(sayfaHtml);
+        sayfaHtml = '<div class="grid grid-pdf">';
+        sayfaKartSayisi = 0;
+      }
+      sayfaHtml += kartHtml(u, renk);
+      sayfaKartSayisi++;
+    });
+
+    sayfaHtml += '</div>';
+  });
+  if (sayfaHtml) sayfalar.push(sayfaHtml);
+  return sayfalar;
+}
+
+function beklemeResimler(kapsayici) {
+  var imgs = kapsayici.querySelectorAll('img');
+  return Promise.all(Array.prototype.map.call(imgs, function(img){
+    if (img.complete) return Promise.resolve();
+    return new Promise(function(res){ img.onload = res; img.onerror = res; });
+  }));
+}
+
+async function pdfIndir() {
+  var btn = document.getElementById('btnPdf');
+  btn.disabled = true; btn.textContent = '⏳ Preparing...';
+
+  try {
+    var marka = document.getElementById('fMarka').value;
+    var kategori = document.getElementById('fKategori').value;
+    var arama = document.getElementById('fArama').value.toLowerCase().trim();
+
+    var dosyaAdi = marka ? marka : 'Product_Catalog';
+    if (kategori) dosyaAdi += '_' + kategoriEn(kategori);
+
+    var filtreli = TUM_URUNLER.filter(function(u){
+      if (marka && u.marka !== marka) return false;
+      if (kategori && u.kategori !== kategori) return false;
+      if (arama && !((u.ad||'').toLowerCase().indexOf(arama)>-1 || (u.aktif_madde||'').toLowerCase().indexOf(arama)>-1)) return false;
+      return true;
+    });
+
+    var sayfalar = pdfSayfalariOlustur(filtreli);
+
+    var baslikHtml = '<h1 style="font-size:20px;margin:0 0 4px">📋 Product Catalog' + (marka ? ' — ' + marka : '') + (kategori ? ' (' + kategoriEn(kategori) + ')' : '') + '</h1>' +
+      '<p style="color:#5f6368;font-size:12px;margin:0 0 16px">Product type and content information only — does not include pricing</p>';
+
+    // Off-screen tek-sayfalık render kapsayıcısı — her sayfa kendi küçük canvas'ında işlenir
+    var renderDiv = document.createElement('div');
+    renderDiv.style.position = 'fixed';
+    renderDiv.style.left = '-9999px';
+    renderDiv.style.top = '0';
+    renderDiv.style.width = '718px';
+    renderDiv.style.background = '#ffffff';
+    renderDiv.style.fontFamily = "-apple-system, Segoe UI, Roboto, sans-serif";
+    document.body.appendChild(renderDiv);
+
+    var jsPDFCtor = window.jspdf.jsPDF;
+    var pdf = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var marginMm = 10, contentWmm = 210 - marginMm * 2, contentHmm = 297 - marginMm * 2;
+
+    for (var i = 0; i < sayfalar.length; i++) {
+      btn.textContent = '⏳ Preparing... (' + (i + 1) + '/' + sayfalar.length + ')';
+      renderDiv.innerHTML = '<div style="padding:16px">' + (i === 0 ? baslikHtml : '') + sayfalar[i] + '</div>';
+      await beklemeResimler(renderDiv);
+
+      var canvas = await html2canvas(renderDiv, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      var oran = canvas.height / canvas.width;
+      var imgHmm = contentWmm * oran;
+      var finalW = contentWmm, finalH = imgHmm;
+      if (imgHmm > contentHmm) { finalH = contentHmm; finalW = contentHmm / oran; }
+      var xOffset = marginMm + (contentWmm - finalW) / 2;
+      var yOffset = marginMm + (contentHmm - finalH) / 2;
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, finalW, finalH);
+    }
+
+    document.body.removeChild(renderDiv);
+    pdf.save(dosyaAdi.replace(/[^a-zA-Z0-9-]+/g,'_') + '.pdf');
+    btn.disabled = false; btn.textContent = '📄 Download PDF';
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '📄 Download PDF';
+    alert('PDF could not be created, please try again.');
+    console.error(e);
+  }
+}
+
+yukle();
+</script>
+</body>
+</html>

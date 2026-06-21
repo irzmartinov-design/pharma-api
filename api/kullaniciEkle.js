@@ -8,7 +8,7 @@ async function sha256(text) {
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
   try {
-    const { ad, email, sifre, rol, bayiId, para } = await req.json();
+    const { ad, email, sifre, rol, bayiId, para, dil } = await req.json();
     if (!ad || !email || !rol) return allowCors(err('Ad, email ve rol zorunlu'));
     if (rol === 'Musteri' && !bayiId) return allowCors(err('Müşteri bir Bayiye bağlı olmalı'));
     const sql = getDb();
@@ -16,7 +16,7 @@ export default async function handler(req) {
     if (mevcut) return allowCors(err('Bu email zaten kayıtlı'));
     const id = `${rol.toUpperCase()}-${Date.now()}`;
     const hash = sifre ? await sha256(sifre) : null;
-    await sql`INSERT INTO kullanicilar (id,ad,email,sifre,rol,bayi_id,para,aktif) VALUES (${id},${ad},${email},${hash},${rol},${bayiId||null},${para||'TL'},TRUE)`;
+    await sql`INSERT INTO kullanicilar (id,ad,email,sifre,rol,bayi_id,para,dil,aktif) VALUES (${id},${ad},${email},${hash},${rol},${bayiId||null},${para||'TL'},${dil||'tr'},TRUE)`;
     return allowCors(ok({ mesaj: `${rol} eklendi`, id }));
   } catch (e) { return allowCors(err(e.message, 500)); }
 }

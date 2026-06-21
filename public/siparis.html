@@ -58,133 +58,133 @@ select:focus,input:focus{outline:none;border-color:#1a73e8}
 <body>
 
 <div class="header">
-  <h2>🛒 Yeni Sipariş</h2>
-  <a href="dashboard.html">← Dashboard</a>
+  <h2 data-t="baslik_h2">🛒 Yeni Sipariş</h2>
+  <a href="dashboard.html" data-t="link_dashboard">← Dashboard</a>
 </div>
 
 <div class="container">
 
 <!-- Müşteri Kartı (Bayi/Admin) -->
 <div class="kart" id="musteriKart" style="display:none">
-  <h3>👤 Müşteri</h3>
+  <h3 data-t="musteri_basligi">👤 Müşteri</h3>
   <div class="bayi-secim" id="bayiKendiSecim" style="display:none">
-    <label>Kendi adınıza sipariş</label>
+    <label data-t="lbl_kendi_adina">Kendi adınıza sipariş</label>
     <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
       <input type="checkbox" id="chkKendiSiparis" onchange="kendiSiparisToggle()" style="width:auto">
-      <span>Müşteri seçmeden kendinize sipariş verin</span>
+      <span data-t="lbl_musteri_secmeden">Müşteri seçmeden kendinize sipariş verin</span>
     </div>
   </div>
   <div class="form-group" id="musteriSecGrup">
-    <label>Müşteri *</label>
+    <label data-t="lbl_musteri_zorunlu">Müşteri *</label>
     <select id="selMusteri" onchange="musteriDegisti()">
-      <option value="">Müşteri seçin</option>
+      <option value="" data-t="opt_musteri_secin">Müşteri seçin</option>
     </select>
   </div>
 </div>
 
 <!-- Ürün Seçimi -->
 <div class="kart">
-  <h3>📦 Ürün Seçimi</h3>
-  <div id="yukleniyor" class="yukleniyor">⏳ Ürünler yükleniyor...</div>
+  <h3 data-t="urun_secimi_basligi">📦 Ürün Seçimi</h3>
+  <div id="yukleniyor" class="yukleniyor" data-t="lbl_urunler_yukleniyor">⏳ Ürünler yükleniyor...</div>
   <div id="formIcerik" style="display:none">
     <div class="form-row">
       <div class="form-group">
-        <label>Marka</label>
+        <label data-t="lbl_marka">Marka</label>
         <select id="selMarka" onchange="markaFiltre()">
-          <option value="">Tümü</option>
+          <option value="" data-t="opt_tumu">Tümü</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Kategori</label>
+        <label data-t="lbl_kategori">Kategori</label>
         <select id="selKat" onchange="katFiltre()">
-          <option value="">Tümü</option>
+          <option value="" data-t="opt_tumu">Tümü</option>
         </select>
       </div>
     </div>
     <div class="form-group">
-      <label>Ürün *</label>
+      <label data-t="lbl_urun_zorunlu">Ürün *</label>
       <select id="selUrun" onchange="urunSec()">
-        <option value="">Ürün seçin</option>
+        <option value="" data-t="opt_urun_secin">Ürün seçin</option>
       </select>
     </div>
     <div id="urunBilgi" class="urun-bilgi"></div>
     <div class="form-row">
       <div class="form-group">
-        <label>Miktar *</label>
+        <label data-t="lbl_miktar_zorunlu">Miktar *</label>
         <input type="number" id="miktar" min="1" step="1" placeholder="0" oninput="toplamHesapla()">
       </div>
       <div class="form-group">
-        <label>Para Birimi</label>
+        <label data-t="lbl_para_birimi">Para Birimi</label>
         <input type="text" id="para" readonly style="background:#f8f9fa;color:#5f6368">
       </div>
     </div>
     <div class="fiyat-kutu">
       <div>
-        <div class="etiket">Birim Fiyat</div>
+        <div class="etiket" data-t="lbl_birim_fiyat">Birim Fiyat</div>
         <div><span class="deger" id="birimFiyat">—</span></div>
       </div>
       <div style="text-align:right">
-        <div class="etiket">Toplam Tutar</div>
+        <div class="etiket" data-t="lbl_toplam_tutar">Toplam Tutar</div>
         <div><span class="deger" id="toplamTutar">—</span> <span class="para" id="paraBirim"></span></div>
       </div>
     </div>
-    <button class="btn btn-success" id="btnSepeteEkle" onclick="sepeteEkle()" disabled>+ Sepete Ekle</button>
+    <button class="btn btn-success" id="btnSepeteEkle" onclick="sepeteEkle()" disabled data-t="btn_sepete_ekle">+ Sepete Ekle</button>
   </div>
 </div>
 
 <!-- Sepet -->
 <div class="kart">
-  <h3>🛒 Sepet</h3>
-  <div id="sepetIcerik"><p class="sepet-bos">Henüz ürün eklenmedi.</p></div>
+  <h3 data-t="sepet_basligi">🛒 Sepet</h3>
+  <div id="sepetIcerik"><p class="sepet-bos" data-t="sepet_bos">Henüz ürün eklenmedi.</p></div>
 </div>
 
 <!-- Adres -->
 <div class="kart">
-  <h3>📍 Teslimat Adresi</h3>
+  <h3 data-t="teslimat_basligi">📍 Teslimat Adresi</h3>
   <div class="form-group">
     <select id="selAdres">
-      <option value="">— Adres seçin (zorunlu) —</option>
+      <option value="" data-t="opt_adres_secin_zorunlu">— Adres seçin (zorunlu) —</option>
     </select>
   </div>
-  <button class="adres-ekle-btn" onclick="adresEkleAc()">+ Yeni Adres Ekle</button>
+  <button class="adres-ekle-btn" onclick="adresEkleAc()" data-t="btn_yeni_adres_ekle">+ Yeni Adres Ekle</button>
 </div>
 
 <!-- Adres Ekleme Modalı -->
 <div class="modal-overlay" id="adresModal">
   <div class="modal">
-    <h3>📍 Yeni Adres Ekle</h3>
+    <h3 data-t="modal_yeni_adres">📍 Yeni Adres Ekle</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
-        <label>Adres Adı *</label>
-        <input type="text" id="yeniAdresAd" placeholder="Ev, İş, Depo...">
+        <label data-t="lbl_adres_adi_zorunlu">Adres Adı *</label>
+        <input type="text" id="yeniAdresAd" placeholder="Ev, İş, Depo..." data-tph="ph_adres_adi">
       </div>
       <div class="form-group">
-        <label>Alıcı Adı Soyadı</label>
-        <input type="text" id="yeniAdresAlici" placeholder="Ad Soyad">
+        <label data-t="lbl_alici_adi">Alıcı Adı Soyadı</label>
+        <input type="text" id="yeniAdresAlici" placeholder="Ad Soyad" data-tph="ph_alici_adi">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
-        <label>Telefon</label>
-        <input type="text" id="yeniAdresTel" placeholder="5xx xxx xxxx">
+        <label data-t="lbl_telefon">Telefon</label>
+        <input type="text" id="yeniAdresTel" placeholder="5xx xxx xxxx" data-tph="ph_telefon">
       </div>
       <div class="form-group">
-        <label>İl / Ülke</label>
-        <input type="text" id="yeniAdresSehir" placeholder="İstanbul / Türkiye">
+        <label data-t="lbl_il_ulke">İl / Ülke</label>
+        <input type="text" id="yeniAdresSehir" placeholder="İstanbul / Türkiye" data-tph="ph_il_ulke">
       </div>
     </div>
     <div class="form-group">
-      <label>İlçe</label>
-      <input type="text" id="yeniAdresIlce" placeholder="Kadıköy">
+      <label data-t="lbl_ilce">İlçe</label>
+      <input type="text" id="yeniAdresIlce" placeholder="Kadıköy" data-tph="ph_ilce">
     </div>
     <div class="form-group">
-      <label>Adres *</label>
-      <textarea id="yeniAdresSatir" rows="2" style="width:100%;padding:10px 12px;border:1px solid #dadce0;border-radius:8px;font-size:14px;resize:none" placeholder="Sokak, mahalle, bina no..."></textarea>
+      <label data-t="lbl_adres_zorunlu">Adres *</label>
+      <textarea id="yeniAdresSatir" rows="2" style="width:100%;padding:10px 12px;border:1px solid #dadce0;border-radius:8px;font-size:14px;resize:none" placeholder="Sokak, mahalle, bina no..." data-tph="ph_adres_satir"></textarea>
     </div>
     <div class="mesaj" id="adresMesaj"></div>
     <div class="modal-footer">
-      <button class="btn btn-primary btn-w100" id="btnAdresKaydet" onclick="adresEkleKaydet()">💾 Kaydet</button>
-      <button class="btn btn-outline" onclick="adresEkleKapat()">İptal</button>
+      <button class="btn btn-primary btn-w100" id="btnAdresKaydet" onclick="adresEkleKaydet()" data-t="kaydet">💾 Kaydet</button>
+      <button class="btn btn-outline" onclick="adresEkleKapat()" data-t="iptal">İptal</button>
     </div>
   </div>
 </div>
@@ -192,12 +192,12 @@ select:focus,input:focus{outline:none;border-color:#1a73e8}
 <!-- Gönder -->
 <div class="kart">
   <div class="form-group">
-    <label>Sipariş Notu</label>
-    <input type="text" id="sipNot" placeholder="Özel istek veya not (opsiyonel)">
+    <label data-t="lbl_sip_notu">Sipariş Notu</label>
+    <input type="text" id="sipNot" placeholder="Özel istek veya not (opsiyonel)" data-tph="ph_sip_notu">
   </div>
   <div style="display:flex;gap:8px">
-    <button class="btn btn-primary btn-w100" id="btnGonder" onclick="siparisGonder()" disabled>🛒 Siparişi Gönder</button>
-    <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">← Geri</button>
+    <button class="btn btn-primary btn-w100" id="btnGonder" onclick="siparisGonder()" disabled data-t="btn_sip_gonder">🛒 Siparişi Gönder</button>
+    <button class="btn btn-outline" onclick="window.location.href='dashboard.html'" data-t="btn_geri">← Geri</button>
   </div>
   <div class="mesaj" id="mesaj"></div>
 </div>
@@ -212,9 +212,74 @@ var birimFiyatDeger = 0;
 var secilenParaStr = '';
 var sepet = []; // {urun, miktar, birimFiyat, para, toplam}
 
+function fmtTutar(x) {
+  var n = parseFloat(x) || 0;
+  var parcalar = n.toFixed(2).split('.');
+  parcalar[0] = parcalar[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return parcalar.join('.');
+}
+
+// ── ÇEVİRİ SİSTEMİ ─────────────────────────────────────────────────────
+var DIL = 'tr';
+var T = {
+  tr: {
+    baslik_sayfa:'Sipariş Ver', baslik_h2:'🛒 Yeni Sipariş', link_dashboard:'← Dashboard',
+    musteri_basligi:'👤 Müşteri', lbl_kendi_adina:'Kendi adınıza sipariş', lbl_musteri_secmeden:'Müşteri seçmeden kendinize sipariş verin',
+    lbl_musteri_zorunlu:'Müşteri *', opt_musteri_secin:'Müşteri seçin',
+    urun_secimi_basligi:'📦 Ürün Seçimi', lbl_urunler_yukleniyor:'⏳ Ürünler yükleniyor...',
+    lbl_marka:'Marka', opt_tumu:'Tümü', lbl_kategori:'Kategori', lbl_urun_zorunlu:'Ürün *', opt_urun_secin:'Ürün seçin',
+    lbl_miktar_zorunlu:'Miktar *', lbl_para_birimi:'Para Birimi', lbl_birim_fiyat:'Birim Fiyat', lbl_toplam_tutar:'Toplam Tutar',
+    btn_sepete_ekle:'+ Sepete Ekle', sepet_basligi:'🛒 Sepet', sepet_bos:'Henüz ürün eklenmedi.',
+    teslimat_basligi:'📍 Teslimat Adresi', opt_adres_secin_zorunlu:'— Adres seçin (zorunlu) —', btn_yeni_adres_ekle:'+ Yeni Adres Ekle',
+    modal_yeni_adres:'📍 Yeni Adres Ekle', lbl_adres_adi_zorunlu:'Adres Adı *', ph_adres_adi:'Ev, İş, Depo...',
+    lbl_alici_adi:'Alıcı Adı Soyadı', ph_alici_adi:'Ad Soyad', lbl_telefon:'Telefon', ph_telefon:'5xx xxx xxxx',
+    lbl_il_ulke:'İl / Ülke', ph_il_ulke:'İstanbul / Türkiye', lbl_ilce:'İlçe', ph_ilce:'Kadıköy',
+    lbl_adres_zorunlu:'Adres *', ph_adres_satir:'Sokak, mahalle, bina no...', kaydet:'💾 Kaydet', iptal:'İptal',
+    lbl_sip_notu:'Sipariş Notu', ph_sip_notu:'Özel istek veya not (opsiyonel)', btn_sip_gonder:'🛒 Siparişi Gönder', btn_geri:'← Geri',
+    th_urun:'Ürün', th_adet:'Adet', th_birim_fiyat:'Birim Fiyat', th_tutar:'Tutar', lbl_urun_cesidi:' ürün çeşidi', lbl_toplam_yaklasik:'Toplam ≈ ',
+    msg_kayitli_urun_yok:'Kayıtlı ürün bulunamadı.', msg_urunler_yuklenemedi:'❌ Ürünler yüklenemedi.',
+    msg_kayitli_adres_yok:'Kayıtlı adres yok', msg_adres_yuklenemedi:'Adres yüklenemedi',
+    msg_sepete_urun_ekle:'Sepete ürün ekleyin', msg_teslimat_secin:'Teslimat adresi seçin', msg_musteri_secin:'Müşteri seçin',
+    btn_gonderiliyor:'⏳ Gönderiliyor...', msg_sip_alindi:'✅ Sipariş alındı! No: ', msg_hata_olustu:'Hata oluştu', msg_baglanti_hatasi:'Bağlantı hatası',
+    msg_once_musteri_secin:'Önce müşteri seçin', msg_adres_adi_zorunlu:'Adres adı ve adres zorunlu', btn_kaydediliyor:'⏳ Kaydediliyor...',
+    msg_kayit_hatasi:'Kayıt hatası', yukleniyor:'⏳ Yükleniyor...',
+  },
+  en: {
+    baslik_sayfa:'Place Order', baslik_h2:'🛒 New Order', link_dashboard:'← Dashboard',
+    musteri_basligi:'👤 Customer', lbl_kendi_adina:'Order for yourself', lbl_musteri_secmeden:'Place an order for yourself without selecting a customer',
+    lbl_musteri_zorunlu:'Customer *', opt_musteri_secin:'Select customer',
+    urun_secimi_basligi:'📦 Product Selection', lbl_urunler_yukleniyor:'⏳ Loading products...',
+    lbl_marka:'Brand', opt_tumu:'All', lbl_kategori:'Category', lbl_urun_zorunlu:'Product *', opt_urun_secin:'Select product',
+    lbl_miktar_zorunlu:'Quantity *', lbl_para_birimi:'Currency', lbl_birim_fiyat:'Unit Price', lbl_toplam_tutar:'Total Amount',
+    btn_sepete_ekle:'+ Add to Cart', sepet_basligi:'🛒 Cart', sepet_bos:'No products added yet.',
+    teslimat_basligi:'📍 Delivery Address', opt_adres_secin_zorunlu:'— Select address (required) —', btn_yeni_adres_ekle:'+ Add New Address',
+    modal_yeni_adres:'📍 Add New Address', lbl_adres_adi_zorunlu:'Address Name *', ph_adres_adi:'Home, Work, Warehouse...',
+    lbl_alici_adi:'Recipient Name', ph_alici_adi:'Full Name', lbl_telefon:'Phone', ph_telefon:'Phone number',
+    lbl_il_ulke:'City / Country', ph_il_ulke:'Oslo / Norway', lbl_ilce:'District', ph_ilce:'District',
+    lbl_adres_zorunlu:'Address *', ph_adres_satir:'Street, neighborhood, building no...', kaydet:'💾 Save', iptal:'Cancel',
+    lbl_sip_notu:'Order Note', ph_sip_notu:'Special request or note (optional)', btn_sip_gonder:'🛒 Place Order', btn_geri:'← Back',
+    th_urun:'Product', th_adet:'Qty', th_birim_fiyat:'Unit Price', th_tutar:'Amount', lbl_urun_cesidi:' product types', lbl_toplam_yaklasik:'Total ≈ ',
+    msg_kayitli_urun_yok:'No products found.', msg_urunler_yuklenemedi:'❌ Failed to load products.',
+    msg_kayitli_adres_yok:'No saved addresses', msg_adres_yuklenemedi:'Failed to load addresses',
+    msg_sepete_urun_ekle:'Add a product to the cart', msg_teslimat_secin:'Select a delivery address', msg_musteri_secin:'Select a customer',
+    btn_gonderiliyor:'⏳ Sending...', msg_sip_alindi:'✅ Order received! No: ', msg_hata_olustu:'An error occurred', msg_baglanti_hatasi:'Connection error',
+    msg_once_musteri_secin:'Select a customer first', msg_adres_adi_zorunlu:'Address name and address are required', btn_kaydediliyor:'⏳ Saving...',
+    msg_kayit_hatasi:'Save error', yukleniyor:'⏳ Loading...',
+  }
+};
+function t(key) { return (T[DIL] && T[DIL][key]) || (T.tr[key]) || key; }
+function uygulaCeviri() {
+  document.title = t('baslik_sayfa');
+  document.querySelectorAll('[data-t]').forEach(function(el){ el.textContent = t(el.getAttribute('data-t')); });
+  document.querySelectorAll('[data-tph]').forEach(function(el){ el.placeholder = t(el.getAttribute('data-tph')); });
+}
+// ── ÇEVİRİ SİSTEMİ SONU ────────────────────────────────────────────────
+
 function init() {
   try { oturum = JSON.parse(localStorage.getItem('_oturum')); } catch(e){}
   if (!oturum) { window.location.href = 'giris.html'; return; }
+  DIL = oturum.dil || 'tr';
+  uygulaCeviri();
 
   if (oturum.rol === 'Bayi' || oturum.rol === 'Admin') {
     document.getElementById('musteriKart').style.display = 'block';
@@ -274,10 +339,10 @@ function musteriDegisti() {
 // ── ADRES ─────────────────────────────────────────────────────────────────
 function adresYukle(musteriId) {
   var sel = document.getElementById('selAdres');
-  sel.innerHTML = '<option value="">⏳ Yükleniyor...</option>';
+  sel.innerHTML = '<option value="">'+t('yukleniyor')+'</option>';
   post('getAdresler', { musteriId: musteriId }).then(function(r) {
     var adresler = r.adresler || [];
-    sel.innerHTML = '<option value="">— Adres seçin (zorunlu) —</option>';
+    sel.innerHTML = '<option value="">'+t('opt_adres_secin_zorunlu')+'</option>';
     adresler.forEach(function(a) {
       var opt = document.createElement('option');
       opt.value = a.id;
@@ -285,15 +350,15 @@ function adresYukle(musteriId) {
       sel.appendChild(opt);
     });
     if (!adresler.length) {
-      sel.innerHTML = '<option value="">Kayıtlı adres yok</option>';
+      sel.innerHTML = '<option value="">'+t('msg_kayitli_adres_yok')+'</option>';
     }
   }).catch(function() {
-    sel.innerHTML = '<option value="">Adres yüklenemedi</option>';
+    sel.innerHTML = '<option value="">'+t('msg_adres_yuklenemedi')+'</option>';
   });
 }
 
 function resetAdresler() {
-  document.getElementById('selAdres').innerHTML = '<option value="">— Adres seçin (zorunlu) —</option>';
+  document.getElementById('selAdres').innerHTML = '<option value="">'+t('opt_adres_secin_zorunlu')+'</option>';
 }
 
 // ── ÜRÜN ──────────────────────────────────────────────────────────────────
@@ -303,14 +368,14 @@ function urunYukle() {
     document.getElementById('yukleniyor').style.display = 'none';
     if (!tumUrunler.length) {
       document.getElementById('yukleniyor').style.display = 'block';
-      document.getElementById('yukleniyor').textContent = 'Kayıtlı ürün bulunamadı.';
+      document.getElementById('yukleniyor').textContent = t('msg_kayitli_urun_yok');
       return;
     }
     document.getElementById('formIcerik').style.display = 'block';
     doldurMarkalar();
     doldurUrunler();
   }).catch(function() {
-    document.getElementById('yukleniyor').textContent = '❌ Ürünler yüklenemedi.';
+    document.getElementById('yukleniyor').textContent = t('msg_urunler_yuklenemedi');
   });
 }
 
@@ -319,7 +384,7 @@ function doldurMarkalar() {
   tumUrunler.forEach(function(u){ if (u.marka && markalar.indexOf(u.marka) < 0) markalar.push(u.marka); });
   markalar.sort();
   var sel = document.getElementById('selMarka');
-  sel.innerHTML = '<option value="">Tümü</option>';
+  sel.innerHTML = '<option value="">'+t('opt_tumu')+'</option>';
   markalar.forEach(function(m) {
     var opt = document.createElement('option');
     opt.value = m; opt.textContent = m;
@@ -335,7 +400,7 @@ function markaFiltre() {
   tumUrunler.filter(function(u){ return !marka || u.marka === marka; })
     .forEach(function(u){ if (u.kategori && katlar.indexOf(u.kategori) < 0) katlar.push(u.kategori); });
   katlar.sort();
-  katSel.innerHTML = '<option value="">Tümü</option>';
+  katSel.innerHTML = '<option value="">'+t('opt_tumu')+'</option>';
   katlar.forEach(function(k) {
     var opt = document.createElement('option');
     opt.value = k; opt.textContent = k;
@@ -354,7 +419,7 @@ function doldurUrunler() {
     return (!marka || u.marka === marka) && (!kat || u.kategori === kat);
   });
   var sel = document.getElementById('selUrun');
-  sel.innerHTML = '<option value="">Ürün seçin</option>';
+  sel.innerHTML = '<option value="">'+t('opt_urun_secin')+'</option>';
   filtered.forEach(function(u) {
     var opt = document.createElement('option');
     opt.value = u.id || u.ad;
@@ -385,7 +450,7 @@ function urunSec() {
 
   document.getElementById('para').value = secilenParaStr;
   document.getElementById('paraBirim').textContent = secilenParaStr;
-  document.getElementById('birimFiyat').textContent = birimFiyatDeger > 0 ? birimFiyatDeger.toFixed(2) : '—';
+  document.getElementById('birimFiyat').textContent = birimFiyatDeger > 0 ? fmtTutar(birimFiyatDeger) : '—';
 
   var bilgiHTML = '📦 ' + (u.marka||'') + (u.kategori ? ' › ' + u.kategori : '')
     + (u.birim ? ' · ' + u.birim : '')
@@ -402,7 +467,7 @@ function urunSec() {
 function toplamHesapla() {
   var miktar = parseInt(document.getElementById('miktar').value) || 0;
   var toplam = birimFiyatDeger * miktar;
-  document.getElementById('toplamTutar').textContent = toplam > 0 ? toplam.toFixed(2) : '—';
+  document.getElementById('toplamTutar').textContent = toplam > 0 ? fmtTutar(toplam) : '—';
   var urunSecildi = document.getElementById('selUrun').value !== '';
   document.getElementById('btnSepeteEkle').disabled = !(urunSecildi && miktar > 0 && birimFiyatDeger > 0);
 }
@@ -459,12 +524,12 @@ function sepetSil(idx) {
 function sepetRender() {
   var el = document.getElementById('sepetIcerik');
   if (!sepet.length) {
-    el.innerHTML = '<p class="sepet-bos">Henüz ürün eklenmedi.</p>';
+    el.innerHTML = '<p class="sepet-bos">'+t('sepet_bos')+'</p>';
     document.getElementById('btnGonder').disabled = true;
     return;
   }
   var toplamToplam = 0;
-  var h = '<table class="sepet-tablo"><tr><th>Ürün</th><th>Adet</th><th>Birim Fiyat</th><th>Tutar</th><th></th></tr>';
+  var h = '<table class="sepet-tablo"><tr><th>'+t('th_urun')+'</th><th>'+t('th_adet')+'</th><th>'+t('th_birim_fiyat')+'</th><th>'+t('th_tutar')+'</th><th></th></tr>';
   sepet.forEach(function(s, i) {
     toplamToplam += s.toplam;
     h += '<tr>';
@@ -472,23 +537,23 @@ function sepetRender() {
     if (s.aktifMadde) h += '<br><span style="font-size:10px;color:#5f6368">💊 ' + s.aktifMadde + '</span>';
     h += '</td>';
     h += '<td>' + s.miktar + (s.birim ? ' ' + s.birim : '') + '</td>';
-    h += '<td>' + s.birimFiyat.toFixed(2) + ' ' + s.para + '</td>';
-    h += '<td><strong>' + s.toplam.toFixed(2) + ' ' + s.para + '</strong></td>';
+    h += '<td>' + fmtTutar(s.birimFiyat) + ' ' + s.para + '</td>';
+    h += '<td><strong>' + fmtTutar(s.toplam) + ' ' + s.para + '</strong></td>';
     h += '<td><button class="sil-btn" onclick="sepetSil(' + i + ')">✕</button></td>';
     h += '</tr>';
   });
   h += '</table>';
-  h += '<div class="sepet-ozet"><span>' + sepet.length + ' ürün çeşidi</span><span class="toplam-txt">Toplam ≈ ' + toplamToplam.toFixed(2) + '</span></div>';
+  h += '<div class="sepet-ozet"><span>' + sepet.length + t('lbl_urun_cesidi') + '</span><span class="toplam-txt">' + t('lbl_toplam_yaklasik') + fmtTutar(toplamToplam) + '</span></div>';
   el.innerHTML = h;
   document.getElementById('btnGonder').disabled = false;
 }
 
 // ── SİPARİŞ GÖNDER ───────────────────────────────────────────────────────
 function siparisGonder() {
-  if (!sepet.length) { showMesaj('Sepete ürün ekleyin', false); return; }
+  if (!sepet.length) { showMesaj(t('msg_sepete_urun_ekle'), false); return; }
 
   var adresId = document.getElementById('selAdres').value;
-  if (!adresId) { showMesaj('Teslimat adresi seçin', false); return; }
+  if (!adresId) { showMesaj(t('msg_teslimat_secin'), false); return; }
 
   var musteriId;
   if (oturum.rol === 'Musteri') {
@@ -497,7 +562,7 @@ function siparisGonder() {
     musteriId = oturum.id;
   } else {
     musteriId = document.getElementById('selMusteri').value;
-    if (!musteriId) { showMesaj('Müşteri seçin', false); return; }
+    if (!musteriId) { showMesaj(t('msg_musteri_secin'), false); return; }
   }
 
   // Müşteri kendi bayisine, Bayi kendi ID'sine, Admin sabit koda bağlanır
@@ -508,7 +573,7 @@ function siparisGonder() {
   var sipNot = document.getElementById('sipNot').value;
   var btn = document.getElementById('btnGonder');
   btn.disabled = true;
-  btn.textContent = '⏳ Gönderiliyor...';
+  btn.textContent = t('btn_gonderiliyor');
 
   // Tek API çağrısıyla tüm sepeti gönder
   fetch(API + '/siparisVer', {
@@ -528,20 +593,20 @@ function siparisGonder() {
     })
   }).then(function(r){ return r.json(); }).then(function(r) {
     if (r.basarili) {
-      showMesaj('✅ Sipariş alındı! No: ' + r.siparisId, true);
+      showMesaj(t('msg_sip_alindi') + r.siparisId, true);
       sepet = [];
       sepetRender();
       document.getElementById('sipNot').value = '';
-      btn.textContent = '🛒 Siparişi Gönder';
+      btn.textContent = t('btn_sip_gonder');
     } else {
-      showMesaj('❌ ' + (r.hata||'Hata oluştu'), false);
+      showMesaj('❌ ' + (r.hata||t('msg_hata_olustu')), false);
       btn.disabled = false;
-      btn.textContent = '🛒 Siparişi Gönder';
+      btn.textContent = t('btn_sip_gonder');
     }
   }).catch(function() {
-    showMesaj('Bağlantı hatası', false);
+    showMesaj(t('msg_baglanti_hatasi'), false);
     btn.disabled = false;
-    btn.textContent = '🛒 Siparişi Gönder';
+    btn.textContent = t('btn_sip_gonder');
   });
 }
 
@@ -554,7 +619,7 @@ function aktifMusteriId() {
 
 function adresEkleAc() {
   var mid = aktifMusteriId();
-  if (!mid) { showMesaj('Önce müşteri seçin', false); return; }
+  if (!mid) { showMesaj(t('msg_once_musteri_secin'), false); return; }
   ['yeniAdresAd','yeniAdresAlici','yeniAdresTel','yeniAdresSehir','yeniAdresIlce','yeniAdresSatir'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('adresMesaj').style.display = 'none';
   document.getElementById('btnAdresKaydet').disabled = false;
@@ -573,10 +638,9 @@ function adresEkleKaydet() {
   var tel = document.getElementById('yeniAdresTel').value.trim();
   var sehir = document.getElementById('yeniAdresSehir').value.trim();
   var ilce = document.getElementById('yeniAdresIlce').value.trim();
-  if (sehir && sehir.indexOf('/') === -1) sehir += ' / Türkiye';
   if (!ad || !adresSatir) {
     var el = document.getElementById('adresMesaj');
-    el.textContent = 'Adres adı ve adres zorunlu';
+    el.textContent = t('msg_adres_adi_zorunlu');
     el.className = 'mesaj hata';
     el.style.display = 'block';
     return;
@@ -584,7 +648,7 @@ function adresEkleKaydet() {
   var mid = aktifMusteriId();
   var btn = document.getElementById('btnAdresKaydet');
   btn.disabled = true;
-  btn.textContent = '⏳ Kaydediliyor...';
+  btn.textContent = t('btn_kaydediliyor');
 
   fetch(API + '/adresKaydet', {
     method: 'POST',
@@ -598,28 +662,28 @@ function adresEkleKaydet() {
       adresYukleVeSeç(mid, yeniId);
     } else {
       var el = document.getElementById('adresMesaj');
-      el.textContent = r.hata || 'Kayıt hatası';
+      el.textContent = r.hata || t('msg_kayit_hatasi');
       el.className = 'mesaj hata';
       el.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = '💾 Kaydet';
+      btn.textContent = t('kaydet');
     }
   }).catch(function() {
     var el = document.getElementById('adresMesaj');
-    el.textContent = 'Bağlantı hatası';
+    el.textContent = t('msg_baglanti_hatasi');
     el.className = 'mesaj hata';
     el.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = '💾 Kaydet';
+    btn.textContent = t('kaydet');
   });
 }
 
 function adresYukleVeSeç(musteriId, seçilecekId) {
   var sel = document.getElementById('selAdres');
-  sel.innerHTML = '<option value="">⏳ Yükleniyor...</option>';
+  sel.innerHTML = '<option value="">'+t('yukleniyor')+'</option>';
   post('getAdresler', { musteriId: musteriId }).then(function(r) {
     var adresler = r.adresler || [];
-    sel.innerHTML = '<option value="">— Adres seçin (zorunlu) —</option>';
+    sel.innerHTML = '<option value="">'+t('opt_adres_secin_zorunlu')+'</option>';
     adresler.forEach(function(a) {
       var opt = document.createElement('option');
       opt.value = a.id;
@@ -627,7 +691,7 @@ function adresYukleVeSeç(musteriId, seçilecekId) {
       if (a.id === seçilecekId) opt.selected = true;
       sel.appendChild(opt);
     });
-    if (!adresler.length) sel.innerHTML = '<option value="">Kayıtlı adres yok</option>';
+    if (!adresler.length) sel.innerHTML = '<option value="">'+t('msg_kayitli_adres_yok')+'</option>';
   });
 }
 

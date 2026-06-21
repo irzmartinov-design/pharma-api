@@ -7,11 +7,11 @@ export default async function handler(req) {
     const bid = bayiId || '';
     const mid = musteriId || '';
 
-    const [bayiler, musteriler, markalar, kategoriler, s1, s2, s3, s4] = await Promise.all([
+    const [bayiler, musteriler, markalar, kategoriler, s1, s2, s3, s4, s5] = await Promise.all([
       sql`SELECT id,ad,email,para FROM kullanicilar WHERE rol='Bayi' AND aktif=TRUE ORDER BY ad`,
       rol === 'Bayi'
-        ? sql`SELECT id,ad,email,para FROM kullanicilar WHERE rol='Musteri' AND bayi_id=${bid} AND aktif=TRUE ORDER BY ad`
-        : sql`SELECT id,ad,email,para FROM kullanicilar WHERE rol='Musteri' AND aktif=TRUE ORDER BY ad`,
+        ? sql`SELECT id,ad,email,para,otomatik_onay FROM kullanicilar WHERE rol='Musteri' AND bayi_id=${bid} AND aktif=TRUE ORDER BY ad`
+        : sql`SELECT id,ad,email,para,otomatik_onay FROM kullanicilar WHERE rol='Musteri' AND aktif=TRUE ORDER BY ad`,
       sql`SELECT id,ad FROM markalar WHERE aktif=TRUE ORDER BY ad`,
       sql`SELECT id,ad,marka_id FROM kategoriler WHERE aktif=TRUE ORDER BY ad`,
       // Bekleyen
@@ -37,7 +37,13 @@ export default async function handler(req) {
         ? sql`SELECT COUNT(*) FROM siparisler WHERE durum='Reddedildi' AND id ~ '^SP-[0-9]+$'`
         : rol === 'Bayi'
           ? sql`SELECT COUNT(*) FROM siparisler WHERE bayi_kod=${bid} AND durum='Reddedildi' AND id ~ '^SP-[0-9]+$'`
-          : sql`SELECT COUNT(*) FROM siparisler WHERE musteri_id=${mid} AND durum='Reddedildi' AND id ~ '^SP-[0-9]+$'`
+          : sql`SELECT COUNT(*) FROM siparisler WHERE musteri_id=${mid} AND durum='Reddedildi' AND id ~ '^SP-[0-9]+$'`,
+      // Otomatik onaylı müşteri sayısı
+      rol === 'Admin'
+        ? sql`SELECT COUNT(*) FROM kullanicilar WHERE rol='Musteri' AND otomatik_onay=TRUE AND aktif=TRUE`
+        : rol === 'Bayi'
+          ? sql`SELECT COUNT(*) FROM kullanicilar WHERE rol='Musteri' AND bayi_id=${bid} AND otomatik_onay=TRUE AND aktif=TRUE`
+          : sql`SELECT 0 AS count`
     ]);
 
     return allowCors(ok({
@@ -45,7 +51,8 @@ export default async function handler(req) {
       bekleyenSayisi:   parseInt(s1[0]?.count) || 0,
       onaylananSayisi:  parseInt(s2[0]?.count) || 0,
       tamamlananSayisi: parseInt(s3[0]?.count) || 0,
-      reddedilenSayisi: parseInt(s4[0]?.count) || 0
+      reddedilenSayisi: parseInt(s4[0]?.count) || 0,
+      otomatikOnaySayisi: parseInt(s5[0]?.count) || 0
     }));
   } catch (e) { return allowCors(err(e.message, 500)); }
 }
