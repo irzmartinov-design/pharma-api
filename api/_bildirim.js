@@ -33,10 +33,10 @@ const METIN = {
 
 async function aliciBul(sql, { rol, id }) {
   if (rol === 'Admin') {
-    return await sql`SELECT email, dil FROM kullanicilar WHERE rol='Admin' AND aktif=TRUE`;
+    return await sql`SELECT email, dil, rol FROM kullanicilar WHERE rol='Admin' AND aktif=TRUE`;
   }
   if (!id) return [];
-  return await sql`SELECT email, dil FROM kullanicilar WHERE id=${id} AND aktif=TRUE`;
+  return await sql`SELECT email, dil, rol FROM kullanicilar WHERE id=${id} AND aktif=TRUE`;
 }
 
 // durum: 'Bayi Onay Bekliyor' | 'Admin Onay Bekliyor' | 'Onaylandı' | 'Onaylandı (Otomatik)' | 'Reddedildi'
@@ -46,14 +46,21 @@ export async function siparisMailBildir(sql, { grupId, durum, bayiKod, musteriId
   if (durum === 'Bayi Onay Bekliyor') { hedefRol = 'Bayi'; hedefId = bayiKod; tip = 'onayBekliyor'; }
   else if (durum === 'Admin Onay Bekliyor') { hedefRol = 'Admin'; tip = 'onayBekliyor'; }
   else if (durum === 'Onaylandı' || durum === 'Onaylandı (Otomatik)') {
-    hedefRol = musteriId ? 'Musteri' : 'Bayi'; hedefId = musteriId || bayiKod; tip = 'onaylandi';
+    hedefId = musteriId || bayiKod; tip = 'onaylandi';
   } else if (durum === 'Reddedildi') {
-    hedefRol = musteriId ? 'Musteri' : 'Bayi'; hedefId = musteriId || bayiKod; tip = 'reddedildi';
+    hedefId = musteriId || bayiKod; tip = 'reddedildi';
   } else {
     return;
   }
 
-  const aliciler = await aliciBul(sql, { rol: hedefRol, id: hedefId });
+  let aliciler = await aliciBul(sql, { rol: hedefRol, id: hedefId });
+
+  // DNS doğrulanana kadar gerçek Müşteriye (end customer) mail gönderilmiyor — sadece Bayi/Admin arası.
+  // Domain doğrulanınca Vercel'de MUSTERI_MAIL_AKTIF=true yapılması yeterli.
+  if (process.env.MUSTERI_MAIL_AKTIF !== 'true') {
+    aliciler = aliciler.filter(a => a.rol !== 'Musteri');
+  }
+
   if (!aliciler.length) return;
 
   let gonderildi = false;
