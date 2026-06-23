@@ -1,4 +1,5 @@
 import { getDb, ok, err, allowCors } from './_db.js';
+import { siparisMailBildir } from './_bildirim.js';
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return allowCors(new Response(null));
@@ -56,6 +57,8 @@ export default async function handler(req) {
           ${parseInt(u.miktar)}, ${parseFloat(u.birimFiyat)}, ${u.para},
           ${parseFloat(u.toplam)}, ${bayiToplam}, ${durum}, ${sipNot||null}, ${onayBayi})`;
     }
+
+    await siparisMailBildir(sql, { grupId, durum, bayiKod, urunAdi: urunler[0].urunAdi });
 
     return allowCors(ok({ mesaj: 'Sipariş alındı', siparisId: grupId }));
   } catch (e) {
